@@ -1,0 +1,3323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pixel Garden Protectors - A retro pixel-art action shooting, farming, and tower defense hybrid web game. Protect your enchanted garden from cute-creepy pests across 4 seasons.">
+  <title>Pixel Garden Protectors</title>
+  <!-- Google Fonts: Retro Press Start 2P & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  
+  <style>
+    /* CSS Root Variable Palette (Pastels + Neons) */
+    :root {
+      --bg-dark: #0f0c1b;
+      --bg-card: rgba(30, 22, 54, 0.7);
+      --border-neon: rgba(157, 78, 221, 0.4);
+      --shadow-neon: 0 0 15px rgba(157, 78, 221, 0.5);
+      
+      --cream: #FFFACD;
+      --light-pink: #FFB6D9;
+      --soft-blue: #A8D8FF;
+      --mint-green: #A8FFAB;
+      --peach: #FFDAB9;
+      --lavender: #D8B8FF;
+      
+      --hot-pink: #FF1493;
+      --cyan: #00FFFF;
+      --lime: #00FF00;
+      --golden: #FFD700;
+      --purple: #9D4EDD;
+      
+      --text-main: #f0f0f5;
+      --font-retro: 'Press Start 2P', monospace;
+      --font-body: 'Outfit', sans-serif;
+      --ui-scale: 1;
+    }
+
+    /* Colorblind Modes Override */
+    body.deuteranopia {
+      --mint-green: #d8b8ff;
+      --lime: #00ffff;
+      --hot-pink: #ffd700;
+    }
+    body.protanopia {
+      --mint-green: #a8d8ff;
+      --lime: #fffacd;
+      --hot-pink: #ffd700;
+    }
+    body.tritanopia {
+      --mint-green: #ffdab9;
+      --lime: #ffb6d9;
+      --hot-pink: #ff5252;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Fullscreen Game Container */
+    #game-container {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      background-color: #000;
+      border: 6px solid var(--purple);
+      border-radius: 12px;
+      box-shadow: var(--shadow-neon);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scanlines / Retro CRT Visuals Overlay */
+    .crt-effect::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 999;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    /* Main Canvas */
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: #1e2417; /* Garden soil/grass color */
+      cursor: crosshair;
+      image-rendering: pixelated;
+    }
+
+    /* Glassmorphic Screen Overlays */
+    .screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(12, 8, 24, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 40px;
+      text-align: center;
+      transition: opacity 0.3s ease;
+    }
+
+    .hidden {
+      display: none !important;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Typography & Header styling */
+    h1, h2, h3, h4 {
+      font-family: var(--font-retro);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: var(--golden);
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      animation: floatTitle 3s ease-in-out infinite;
+    }
+
+    @keyframes floatTitle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      max-width: 800px;
+    }
+
+    /* Custom Glass Buttons */
+    .btn {
+      font-family: var(--font-retro);
+      font-size: 0.9rem;
+      padding: 15px 30px;
+      margin: 10px;
+      border: 2px solid var(--purple);
+      background: var(--bg-card);
+      color: var(--text-main);
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      outline: none;
+    }
+
+    .btn:hover {
+      background: var(--purple);
+      border-color: var(--cyan);
+      box-shadow: var(--shadow-neon);
+      transform: scale(1.05);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Specific UI Components */
+    .menu-options {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .menu-options .btn {
+      width: 100%;
+    }
+
+    /* Seasonal Setup Options Card Grid */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-neon);
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .card:hover {
+      border-color: var(--cyan);
+      box-shadow: var(--shadow-neon);
+      transform: translateY(-5px);
+    }
+
+    .card h3 {
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+
+    .card img, .card canvas {
+      image-rendering: pixelated;
+      margin-bottom: 10px;
+    }
+
+    /* Upgrade Selection View */
+    .upgrade-cards {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 40px;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .upgrade-card {
+      background: var(--bg-card);
+      border: 3px dashed var(--purple);
+      border-radius: 16px;
+      padding: 30px;
+      width: 250px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .upgrade-card:hover {
+      border-style: solid;
+      border-color: var(--lime);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+      transform: translateY(-10px);
+    }
+
+    .upgrade-card .stat {
+      font-family: var(--font-retro);
+      font-size: 0.7rem;
+      color: var(--golden);
+      margin-bottom: 15px;
+    }
+
+    /* Settings UI Layout */
+    .settings-panel {
+      width: 100%;
+      max-width: 600px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-neon);
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .setting-row label {
+      font-family: var(--font-retro);
+      font-size: 0.7rem;
+    }
+
+    .setting-row input[type="range"] {
+      width: 200px;
+      accent-color: var(--purple);
+    }
+
+    .setting-row select {
+      padding: 5px 10px;
+      background: #111;
+      color: #fff;
+      border: 1px solid var(--purple);
+      font-family: var(--font-body);
+      border-radius: 4px;
+    }
+
+    /* HUD Layout Elements (Layered transparent overlay) */
+    #hud-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      font-family: var(--font-retro);
+      font-size: 0.65rem;
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .hud-block {
+      background: rgba(15, 10, 30, 0.85);
+      border: 1.5px solid var(--border-neon);
+      border-radius: 8px;
+      padding: 10px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      pointer-events: auto;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    }
+
+    .hud-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+    }
+
+    .health-bar-container {
+      width: 120px;
+      height: 12px;
+      background: #333;
+      border: 1px solid #777;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 3px;
+    }
+
+    .health-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: var(--lime);
+      transition: width 0.1s ease;
+    }
+
+    .combo-badge {
+      font-size: 0.9rem;
+      color: var(--cyan);
+      animation: pulse 1s infinite alternate;
+      text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    /* Crop planting Selection Bar */
+    .planting-bar {
+      display: flex;
+      gap: 8px;
+      background: rgba(15, 10, 30, 0.9);
+      border: 2px solid var(--border-neon);
+      border-radius: 12px;
+      padding: 10px;
+      pointer-events: auto;
+    }
+
+    .crop-slot {
+      width: 54px;
+      height: 64px;
+      border: 2px solid #555;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      background: rgba(0,0,0,0.5);
+      transition: all 0.1s ease;
+    }
+
+    .crop-slot:hover {
+      border-color: var(--lavender);
+      background: rgba(157, 78, 221, 0.2);
+    }
+
+    .crop-slot.selected {
+      border-color: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      background: rgba(0, 255, 255, 0.15);
+    }
+
+    .crop-slot canvas {
+      width: 24px;
+      height: 32px;
+    }
+
+    .crop-cost-badge {
+      font-family: var(--font-body);
+      font-size: 0.55rem;
+      color: var(--cream);
+      margin-top: 2px;
+    }
+
+    .crop-hotkey {
+      position: absolute;
+      top: 1px;
+      left: 3px;
+      font-size: 0.45rem;
+      color: #999;
+    }
+
+    /* Toast system for game notifications */
+    #notification-toast {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 20, 147, 0.9);
+      border: 2px solid #fff;
+      color: #fff;
+      font-family: var(--font-retro);
+      font-size: 0.75rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      pointer-events: none;
+      z-index: 200;
+      text-transform: uppercase;
+      text-align: center;
+      transition: opacity 0.2s ease;
+    }
+  </style>
+</head>
+<body class="crt-effect">
+  
+  <div id="game-container">
+    
+    <!-- Game HUD -->
+    <div id="hud-overlay" class="hidden">
+      <!-- Top Bar -->
+      <div class="hud-header">
+        <div class="hud-block" id="hud-left">
+          <div>SEASON: <span id="val-season" style="color: var(--lime);">SPRING</span></div>
+          <div>WAVE: <span id="val-wave">1/5</span></div>
+          <div>LIVES: <span id="val-lives" style="color: var(--hot-pink);">❤️ ❤️ ❤️</span></div>
+          <div style="display:flex; align-items:center; gap:5px;">
+            HP:
+            <div class="health-bar-container">
+              <div class="health-bar-fill" id="val-hp-fill"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="hud-block" id="hud-center" style="align-items: center; justify-content: center; min-width: 150px;">
+          <div id="val-combo-badge" class="combo-badge hidden">COMBO 0x</div>
+          <div>SCORE: <span id="val-score" style="color: var(--golden);">0</span></div>
+        </div>
+        
+        <div class="hud-block" id="hud-right">
+          <div>WEAPONS (1-5):</div>
+          <div id="val-weapon-list" style="display:flex; flex-direction:column; gap:2px; font-size:0.55rem;">
+            <div id="wp-1" style="color: var(--cyan);">[1] SEED GUN</div>
+            <div id="wp-2" style="color:#555;">[2] THORN SPRAY</div>
+            <div id="wp-3" style="color:#555;">[3] VINE WHIP</div>
+            <div id="wp-4" style="color:#555;">[4] POLLEN BURST</div>
+            <div id="wp-5" style="color:#555;">[5] SUNBEAM</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Center Boss HUD (Spawns at top center) -->
+      <div id="boss-hud" class="hud-block hidden" style="position: absolute; top: 120px; left: 50%; transform: translateX(-50%); width: 400px; align-items: center;">
+        <div id="boss-name" style="color: var(--hot-pink); margin-bottom:5px;">BOSS: APHID CLUSTER</div>
+        <div class="health-bar-container" style="width: 100%; height: 16px;">
+          <div class="health-bar-fill" id="boss-hp-fill" style="background: linear-gradient(90deg, var(--hot-pink), var(--purple)); width: 100%;"></div>
+        </div>
+      </div>
+      
+      <!-- Bottom Bar -->
+      <div class="hud-footer">
+        <div class="hud-block" id="hud-companion" style="flex-direction:row; align-items:center; gap:10px;">
+          <canvas id="companion-icon-canvas" width="24" height="24"></canvas>
+          <div>
+            <div id="val-comp-name">HEDGEHOG (LV. 1)</div>
+            <div id="val-comp-ability" style="color: var(--lavender); font-size: 0.55rem;">[Q] DEFENSE SHIELD</div>
+            <div id="val-comp-cooldown" style="color: #999; font-size: 0.5rem;">COOLDOWN: READY</div>
+          </div>
+        </div>
+        
+        <!-- Planting Interface Bar (only fully active during planting phase) -->
+        <div class="planting-bar" id="planting-select-bar">
+          <div class="crop-slot selected" data-crop="carrot" id="slot-0">
+            <span class="crop-hotkey">Z</span>
+            <canvas id="canvas-crop-carrot" width="16" height="32"></canvas>
+            <span class="crop-cost-badge">1🌱/0.5💧</span>
+          </div>
+          <div class="crop-slot" data-crop="sunflower" id="slot-1">
+            <span class="crop-hotkey">X</span>
+            <canvas id="canvas-crop-sunflower" width="16" height="32"></canvas>
+            <span class="crop-cost-badge">2🌱/0.8💧</span>
+          </div>
+          <div class="crop-slot" data-crop="rose" id="slot-2">
+            <span class="crop-hotkey">C</span>
+            <canvas id="canvas-crop-rose" width="16" height="32"></canvas>
+            <span class="crop-cost-badge">3🌱/1.2💧</span>
+          </div>
+          <div class="crop-slot" data-crop="corn" id="slot-3">
+            <span class="crop-hotkey">V</span>
+            <canvas id="canvas-crop-corn" width="16" height="32"></canvas>
+            <span class="crop-cost-badge">4🌱/1.5💧</span>
+          </div>
+          <div class="crop-slot" data-crop="pumpkin" id="slot-4">
+            <span class="crop-hotkey">B</span>
+            <canvas id="canvas-crop-pumpkin" width="16" height="32"></canvas>
+            <span class="crop-cost-badge">5🌱/2.0💧</span>
+          </div>
+        </div>
+        
+        <div class="hud-block" id="hud-resources" style="min-width: 140px;">
+          <div style="color: var(--peach);">🌱 SEEDS: <span id="val-seeds">20</span></div>
+          <div style="color: var(--soft-blue);">💧 WATER: <span id="val-water">3.0</span></div>
+          <div style="font-size: 0.5rem; color:#888;" id="phase-timer-lbl">PREPARE TIME: 30s</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Dynamic notification message -->
+    <div id="notification-toast" class="hidden">WAVE COMPLETE!</div>
+    
+    <!-- Game Screen Canvas -->
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+    
+    <!-- SCREEN 1: Main Menu -->
+    <div id="screen-menu" class="screen-overlay">
+      <h1 id="menu-title">Pixel Garden Protectors</h1>
+      <p style="color: var(--lavender);">Defend your cozy enchanted crop grid from creepy-cute neon pest swarms!</p>
+      
+      <!-- Season select carousel-like view -->
+      <div class="card-grid">
+        <div class="card" id="btn-season-1" onclick="selectSeason(1)">
+          <canvas id="c-ico-spring" width="48" height="48"></canvas>
+          <h3>SPRING</h3>
+          <span style="font-size:0.55rem; color:var(--mint-green); margin-top:5px;">COZY BEGINNINGS</span>
+        </div>
+        <div class="card" id="btn-season-2" onclick="selectSeason(2)">
+          <canvas id="c-ico-summer" width="48" height="48"></canvas>
+          <h3>SUMMER</h3>
+          <span style="font-size:0.55rem; color:var(--peach); margin-top:5px;">SWARM ACCELERATION</span>
+        </div>
+        <div class="card" id="btn-season-3" onclick="selectSeason(3)">
+          <canvas id="c-ico-fall" width="48" height="48"></canvas>
+          <h3>FALL</h3>
+          <span style="font-size:0.55rem; color:var(--lavender); margin-top:5px;">AMBER ONSLAUGHT</span>
+        </div>
+        <div class="card" id="btn-season-4" onclick="selectSeason(4)">
+          <canvas id="c-ico-winter" width="48" height="48"></canvas>
+          <h3>WINTER</h3>
+          <span style="font-size:0.55rem; color:var(--soft-blue); margin-top:5px;">FROSTY ENDGAME</span>
+        </div>
+      </div>
+      
+      <div class="menu-options">
+        <button class="btn" id="btn-start-game">START GAME</button>
+        <button class="btn" id="btn-show-settings">SETTINGS</button>
+      </div>
+    </div>
+    
+    <!-- SCREEN 2: Seasonal Intro Animation -->
+    <div id="screen-intro" class="screen-overlay hidden">
+      <h2 id="intro-title" style="color: var(--golden); font-size: 2rem;">SEASON 1: SPRING</h2>
+      <p id="intro-desc" style="max-width:600px; margin-top:20px;">Flowers are blooming, and tiny ants have woken up hungry. Protect the garden grids!</p>
+      <div style="margin-top:40px;">
+        <button class="btn" id="btn-skip-intro">CONTINUE TO PLANTING</button>
+      </div>
+    </div>
+    
+    <!-- SCREEN 3: Results & Upgrades Selection -->
+    <div id="screen-upgrades" class="screen-overlay hidden">
+      <h2 style="color: var(--golden);">SEASON COMPLETED!</h2>
+      <p>Select one permanent meta-upgrade to bolster your gardener and companions:</p>
+      
+      <div class="upgrade-cards">
+        <div class="upgrade-card" onclick="chooseUpgrade(0)">
+          <div class="stat" id="up-stat-0">HEALTH UP</div>
+          <div style="font-size:0.8rem; text-align:center; color:#fff;" id="up-desc-0">+10 Max HP & Restore fully</div>
+          <button class="btn" style="padding:8px 16px; font-size:0.55rem; margin-top:15px;">CHOOSE</button>
+        </div>
+        <div class="upgrade-card" onclick="chooseUpgrade(1)">
+          <div class="stat" id="up-stat-1">WEAPON RATIO</div>
+          <div style="font-size:0.8rem; text-align:center; color:#fff;" id="up-desc-1">+15% Weapon Fire Rate</div>
+          <button class="btn" style="padding:8px 16px; font-size:0.55rem; margin-top:15px;">CHOOSE</button>
+        </div>
+        <div class="upgrade-card" onclick="chooseUpgrade(2)">
+          <div class="stat" id="up-stat-2">COMPANION SHIELD</div>
+          <div style="font-size:0.8rem; text-align:center; color:#fff;" id="up-desc-2">-2s Ability Cooldowns</div>
+          <button class="btn" style="padding:8px 16px; font-size:0.55rem; margin-top:15px;">CHOOSE</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SCREEN 4: Game Over Screen -->
+    <div id="screen-gameover" class="screen-overlay hidden">
+      <h2 style="color: var(--hot-pink); font-size: 2.2rem;">GARDEN DEFEATED</h2>
+      <p style="margin-top:10px;">The creepy pests overran your fields. Score: <span id="gameover-score" style="color: var(--golden);">0</span></p>
+      <div style="margin-top:30px;">
+        <button class="btn" id="btn-restart">RETRY SEASON</button>
+        <button class="btn" id="btn-menu-return">MAIN MENU</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: Victory Screen -->
+    <div id="screen-victory" class="screen-overlay hidden">
+      <h2 style="color: var(--lime); font-size: 2.2rem;">GARDEN PROTECTED!</h2>
+      <p style="margin-top:10px;">You completed all seasons! You are the Ultimate Protector. Total Score: <span id="victory-score" style="color: var(--golden);">0</span></p>
+      <div style="margin-top:30px;">
+        <button class="btn" id="btn-victory-replay">PLAY AGAIN (NEW GAME+)</button>
+        <button class="btn" id="btn-victory-menu">MAIN MENU</button>
+      </div>
+    </div>
+    
+    <!-- SCREEN 6: Settings -->
+    <div id="screen-settings" class="screen-overlay hidden">
+      <h2>SETTINGS</h2>
+      
+      <div class="settings-panel">
+        <div class="setting-row">
+          <label>MASTER VOLUME</label>
+          <input type="range" id="slider-volume" min="0" max="1" step="0.05" value="0.7">
+        </div>
+        <div class="setting-row">
+          <label>DIFFICULTY</label>
+          <select id="select-difficulty">
+            <option value="easy">EASY (Relaxed Pests)</option>
+            <option value="normal" selected>NORMAL (Standard Swarm)</option>
+            <option value="hard">HARD (Relentless Pests)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>COLORBLIND FILTER</label>
+          <select id="select-colorblind">
+            <option value="none" selected>NONE (Standard Pastels)</option>
+            <option value="deuteranopia">DEUTERANOPIA (Red-Green)</option>
+            <option value="protanopia">PROTANOPIA (Red-Weak)</option>
+            <option value="tritanopia">TRITANOPIA (Blue-Yellow)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>RETRO CRT SCANLINES</label>
+          <select id="select-crt">
+            <option value="on" selected>ON (Retro Vibes)</option>
+            <option value="off">OFF (Clean Pixels)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>TEXT SCALING</label>
+          <select id="select-text-scale">
+            <option value="1">100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="margin-top:30px;">
+        <button class="btn" id="btn-close-settings">SAVE & CLOSE</button>
+      </div>
+    </div>
+    
+    <!-- SCREEN 7: Pause Menu Overlay -->
+    <div id="screen-pause" class="screen-overlay hidden" style="background: rgba(12, 8, 24, 0.9);">
+      <h2>GAME PAUSED</h2>
+      <p style="font-size: 0.9rem;">Press ESC to resume</p>
+      <div class="menu-options">
+        <button class="btn" id="btn-resume-game">RESUME</button>
+        <button class="btn" id="btn-pause-menu">EXIT TO MENU</button>
+      </div>
+    </div>
+    
+  </div>
+
+  <script>
+    /* =========================================================================
+       AUDIO SYNTHESIZER ENGINE (Web Audio API Procedural Generation)
+       ========================================================================= */
+    class AudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterVolumeNode = null;
+        this.globalVolume = 0.5;
+        this.bgmVolume = 0.25;
+        this.sfxVolume = 0.7;
+        
+        this.isPlayingBGM = false;
+        this.bgmTimer = null;
+        this.currentStep = 0;
+        this.tempo = 100; // BPM
+        this.season = 1;
+      }
+      
+      init() {
+        if (this.ctx) return;
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+          this.masterVolumeNode = this.ctx.createGain();
+          this.masterVolumeNode.gain.setValueAtTime(this.globalVolume, this.ctx.currentTime);
+          this.masterVolumeNode.connect(this.ctx.destination);
+          
+          this.isPlayingBGM = true;
+          this.startBGMSequencer();
+        } catch (e) {
+          console.warn("Web Audio API not supported", e);
+        }
+      }
+
+      setVolume(val) {
+        this.globalVolume = val;
+        if (this.masterVolumeNode && this.ctx) {
+          this.masterVolumeNode.gain.setValueAtTime(val, this.ctx.currentTime);
+        }
+      }
+
+      setSeason(s) {
+        this.season = s;
+        if (s === 1) this.tempo = 100;
+        else if (s === 2) this.tempo = 120;
+        else if (s === 3) this.tempo = 90;
+        else if (s === 4) this.tempo = 80;
+      }
+      
+      playSFX(type) {
+        if (!this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        
+        const now = this.ctx.currentTime;
+        const sfxNode = this.ctx.createGain();
+        sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+        sfxNode.connect(this.masterVolumeNode);
+        
+        switch (type) {
+          case 'shoot': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.12);
+            break;
+          }
+          case 'laser': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.3);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.35);
+            break;
+          }
+          case 'whip': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.18);
+            break;
+          }
+          case 'pollen': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.28);
+            break;
+          }
+          case 'hit': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(40, now + 0.08);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.09);
+            break;
+          }
+          case 'plant': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.linearRampToValueAtTime(350, now + 0.2);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume * 0.7, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.2);
+            break;
+          }
+          case 'harvest': {
+            const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C arpeggio
+            notes.forEach((freq, idx) => {
+              const osc = this.ctx.createOscillator();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+              
+              const g = this.ctx.createGain();
+              g.gain.setValueAtTime(this.sfxVolume * 0.6, now + idx * 0.06);
+              g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.06 + 0.15);
+              g.connect(sfxNode);
+              
+              osc.connect(g);
+              osc.start(now + idx * 0.06);
+              osc.stop(now + idx * 0.06 + 0.15);
+            });
+            break;
+          }
+          case 'level_up': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume * 0.5, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.55);
+            break;
+          }
+          case 'boss_spawn': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(80, now);
+            osc.frequency.linearRampToValueAtTime(40, now + 1.0);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 1.2);
+            break;
+          }
+          case 'defeat': {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.8);
+            
+            sfxNode.gain.setValueAtTime(this.sfxVolume, now);
+            sfxNode.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+            
+            osc.connect(sfxNode);
+            osc.start(now);
+            osc.stop(now + 0.9);
+            break;
+          }
+          case 'victory': {
+            const notes = [392.00, 523.25, 659.25, 783.99, 1046.50]; // G C E G C ascending
+            notes.forEach((freq, idx) => {
+              const osc = this.ctx.createOscillator();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+              
+              const g = this.ctx.createGain();
+              g.gain.setValueAtTime(this.sfxVolume * 0.6, now + idx * 0.1);
+              g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+              g.connect(sfxNode);
+              
+              osc.connect(g);
+              osc.start(now + idx * 0.1);
+              osc.stop(now + idx * 0.1 + 0.3);
+            });
+            break;
+          }
+        }
+      }
+
+      startBGMSequencer() {
+        const tick = () => {
+          if (!this.ctx) return;
+          if (this.isPlayingBGM) {
+            const now = this.ctx.currentTime;
+            this.playBGMStep(this.currentStep, now);
+            
+            const stepTime = 60 / this.tempo / 2; // eighth notes
+            this.currentStep = (this.currentStep + 1) % 16;
+            
+            setTimeout(tick, stepTime * 1000);
+          } else {
+            setTimeout(tick, 100);
+          }
+        };
+        tick();
+      }
+
+      playBGMStep(step, time) {
+        if (!this.ctx || this.globalVolume <= 0.05) return;
+        
+        const now = time;
+        const bgmNode = this.ctx.createGain();
+        bgmNode.gain.setValueAtTime(this.bgmVolume * this.globalVolume, now);
+        bgmNode.connect(this.masterVolumeNode);
+        
+        // Define Scales based on Season
+        // Spring: Major Pentatonic
+        // Summer: Fast Lydian/Bright
+        // Fall: Melancholy Minor Pentatonic
+        // Winter: Ethereal/Slow Dorian
+        let bassFreq = 0;
+        let leadFreq = 0;
+        
+        if (this.season === 1) { // Spring
+          const bassPattern = [130.81, 130.81, 146.83, 164.81, 196.00, 196.00, 174.61, 174.61]; // C3, C3, D3, E3, G3, G3, F3, F3
+          const leadPattern = [
+            261.63, 0, 329.63, 392.00, 440.00, 0, 523.25, 440.00,
+            392.00, 0, 329.63, 293.66, 261.63, 0, 0, 0
+          ];
+          if (step % 2 === 0) bassFreq = bassPattern[Math.floor(step / 2) % bassPattern.length];
+          leadFreq = leadPattern[step];
+        } 
+        else if (this.season === 2) { // Summer
+          const bassPattern = [110.00, 110.00, 130.81, 146.83, 164.81, 164.81, 146.83, 130.81]; // A2, A2, C3, D3, E3, E3, D3, C3
+          const leadPattern = [
+            440.00, 523.25, 587.33, 659.25, 0, 587.33, 659.25, 783.99,
+            880.00, 0, 783.99, 659.25, 587.33, 523.25, 440.00, 0
+          ];
+          if (step % 2 === 0) bassFreq = bassPattern[Math.floor(step / 2) % bassPattern.length];
+          leadFreq = leadPattern[step];
+        }
+        else if (this.season === 3) { // Fall
+          const bassPattern = [98.00, 98.00, 116.54, 116.54, 130.81, 130.81, 116.54, 98.00]; // G2, G2, Bb2, Bb2, C3, C3, Bb2, G2
+          const leadPattern = [
+            392.00, 0, 466.16, 523.25, 0, 587.33, 466.16, 392.00,
+            0, 466.16, 523.25, 587.33, 698.46, 587.33, 523.25, 0
+          ];
+          if (step % 2 === 0) bassFreq = bassPattern[Math.floor(step / 2) % bassPattern.length];
+          leadFreq = leadPattern[step];
+        }
+        else { // Winter
+          const bassPattern = [73.42, 73.42, 87.31, 87.31, 65.41, 65.41, 73.42, 73.42]; // D2, D2, F2, F2, C2, C2, D2, D2
+          const leadPattern = [
+            293.66, 0, 0, 349.23, 0, 392.00, 0, 440.00,
+            0, 0, 523.25, 0, 440.00, 392.00, 293.66, 0
+          ];
+          if (step % 4 === 0) bassFreq = bassPattern[Math.floor(step / 4) % bassPattern.length];
+          leadFreq = leadPattern[step];
+        }
+        
+        // Play Bass
+        if (bassFreq > 0) {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(bassFreq, now);
+          
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.06, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          g.connect(bgmNode);
+          
+          osc.connect(g);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+        
+        // Play Lead
+        if (leadFreq > 0) {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(leadFreq, now);
+          
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.04, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          g.connect(bgmNode);
+          
+          osc.connect(g);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        }
+      }
+    }
+
+    const audio = new AudioEngine();
+
+    /* =========================================================================
+       PROCEDURAL SPRITE GENERATOR SYSTEM
+       ========================================================================= */
+    const spriteCache = {};
+
+    function initSpriteCache() {
+      // 1. Player Sprites (Idle & Walk frames)
+      spriteCache.player_idle_0 = createCachedSprite(32, 32, (ctx) => drawPlayerSprite(ctx, 0, false));
+      spriteCache.player_idle_1 = createCachedSprite(32, 32, (ctx) => drawPlayerSprite(ctx, 1, false));
+      spriteCache.player_walk_0 = createCachedSprite(32, 32, (ctx) => drawPlayerSprite(ctx, 0, true));
+      spriteCache.player_walk_1 = createCachedSprite(32, 32, (ctx) => drawPlayerSprite(ctx, 1, true));
+      
+      // 2. Crop Sprout Frame (Universal)
+      spriteCache.sprout = createCachedSprite(16, 32, (ctx) => {
+        ctx.fillStyle = '#8d6e63'; // dirt pot
+        ctx.fillRect(4, 26, 8, 6);
+        ctx.fillStyle = '#a8ffab'; // sprout stem
+        ctx.fillRect(7, 18, 2, 8);
+        ctx.fillStyle = '#00ff00'; // tiny leaves
+        ctx.fillRect(5, 17, 2, 2);
+        ctx.fillRect(9, 16, 2, 2);
+      });
+      
+      // 3. Crop Sprites (Mature)
+      spriteCache.crop_carrot = createCachedSprite(16, 32, (ctx) => {
+        ctx.fillStyle = '#8d6e63'; // dirt
+        ctx.fillRect(2, 28, 12, 4);
+        ctx.fillStyle = '#ff7043'; // carrot orange body
+        ctx.fillRect(5, 12, 6, 16);
+        ctx.fillRect(6, 28, 4, 3);
+        ctx.fillStyle = '#2e7d32'; // carrot green top
+        ctx.fillRect(7, 4, 2, 8);
+        ctx.fillRect(5, 6, 6, 2);
+      });
+      
+      spriteCache.crop_sunflower = createCachedSprite(16, 32, (ctx) => {
+        ctx.fillStyle = '#2e7d32'; // green stem
+        ctx.fillRect(7, 14, 2, 18);
+        ctx.fillStyle = '#4e342e'; // flower center
+        ctx.fillRect(6, 6, 4, 4);
+        ctx.fillStyle = '#ffd700'; // yellow petals
+        ctx.fillRect(4, 4, 8, 2);
+        ctx.fillRect(4, 10, 8, 2);
+        ctx.fillRect(2, 6, 2, 4);
+        ctx.fillRect(12, 6, 2, 4);
+      });
+      
+      spriteCache.crop_rose = createCachedSprite(16, 32, (ctx) => {
+        ctx.fillStyle = '#2e7d32'; // stem
+        ctx.fillRect(7, 10, 2, 22);
+        // thorns
+        ctx.fillStyle = '#1b5e20';
+        ctx.fillRect(5, 18, 2, 2);
+        ctx.fillRect(9, 24, 2, 2);
+        // rose blossom
+        ctx.fillStyle = '#ff1493'; // red outer petals
+        ctx.fillRect(4, 2, 8, 8);
+        ctx.fillStyle = '#d81b60'; // darker swirls
+        ctx.fillRect(6, 4, 4, 4);
+      });
+      
+      spriteCache.crop_corn = createCachedSprite(16, 32, (ctx) => {
+        ctx.fillStyle = '#2e7d32'; // stem/husk base
+        ctx.fillRect(7, 18, 2, 14);
+        // corn stalk husks
+        ctx.fillStyle = '#388e3c';
+        ctx.fillRect(4, 8, 2, 12);
+        ctx.fillRect(10, 8, 2, 12);
+        // yellow kernels
+        ctx.fillStyle = '#ffd54f';
+        ctx.fillRect(6, 4, 4, 14);
+      });
+      
+      spriteCache.crop_pumpkin = createCachedSprite(32, 32, (ctx) => {
+        ctx.fillStyle = '#8d6e63'; // ground
+        ctx.fillRect(2, 28, 28, 4);
+        ctx.fillStyle = '#e65100'; // dark orange pumpkin
+        ctx.fillRect(6, 12, 20, 16);
+        ctx.fillStyle = '#ffb74d'; // highlights
+        ctx.fillRect(8, 14, 4, 12);
+        ctx.fillRect(16, 14, 4, 12);
+        // stalk
+        ctx.fillStyle = '#388e3c';
+        ctx.fillRect(14, 6, 4, 6);
+      });
+
+      // 4. Companions
+      spriteCache.comp_hedgehog = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#8d6e63'; // brown body
+        ctx.fillRect(4, 8, 16, 12);
+        // Spikes
+        ctx.fillStyle = '#4e342e';
+        ctx.fillRect(6, 4, 2, 4);
+        ctx.fillRect(10, 4, 2, 4);
+        ctx.fillRect(14, 4, 2, 4);
+        ctx.fillRect(4, 6, 2, 2);
+        ctx.fillRect(16, 6, 2, 2);
+        // Nose & Face
+        ctx.fillStyle = '#ff8a80'; // pink nose
+        ctx.fillRect(21, 14, 2, 2);
+        ctx.fillStyle = '#111'; // eye
+        ctx.fillRect(17, 10, 2, 2);
+      });
+
+      spriteCache.comp_ladybug = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#ff1744'; // red shell
+        ctx.beginPath();
+        ctx.arc(12, 12, 8, 0, Math.PI*2);
+        ctx.fill();
+        // Head
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.arc(19, 12, 4, 0, Math.PI*2);
+        ctx.fill();
+        // White eyes
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(18, 10, 1, 1);
+        ctx.fillRect(18, 13, 1, 1);
+        // Spots
+        ctx.fillStyle = '#111';
+        ctx.fillRect(9, 8, 2, 2);
+        ctx.fillRect(9, 14, 2, 2);
+        ctx.fillRect(13, 11, 2, 2);
+      });
+
+      spriteCache.comp_butterfly = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#00e5ff'; // wings (cyan)
+        // wings left
+        ctx.beginPath(); ctx.arc(7, 10, 6, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, 16, 4, 0, Math.PI*2); ctx.fill();
+        // wings right
+        ctx.beginPath(); ctx.arc(17, 10, 6, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(17, 16, 4, 0, Math.PI*2); ctx.fill();
+        // body
+        ctx.fillStyle = '#9d4edd';
+        ctx.fillRect(11, 6, 2, 14);
+      });
+
+      spriteCache.comp_owl = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#8d6e63'; // brown body
+        ctx.fillRect(5, 6, 14, 14);
+        // white belly
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(8, 12, 8, 8);
+        // yellow big eyes
+        ctx.fillStyle = '#ffeb3b';
+        ctx.fillRect(6, 8, 5, 5);
+        ctx.fillRect(13, 8, 5, 5);
+        ctx.fillStyle = '#000'; // pupils
+        ctx.fillRect(8, 10, 2, 2);
+        ctx.fillRect(14, 10, 2, 2);
+        // beak
+        ctx.fillStyle = '#ff9800';
+        ctx.fillRect(11, 12, 2, 2);
+      });
+
+      spriteCache.comp_snowfox = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#e3f2fd'; // icy body
+        ctx.fillRect(6, 8, 12, 10);
+        // tail
+        ctx.fillStyle = '#90caf9';
+        ctx.fillRect(2, 12, 5, 6);
+        // head
+        ctx.fillStyle = '#e3f2fd';
+        ctx.fillRect(14, 4, 6, 8);
+        // nose
+        ctx.fillStyle = '#111';
+        ctx.fillRect(20, 8, 1, 1);
+        // glowing blue eyes
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(16, 6, 2, 2);
+      });
+
+      // 5. Enemies (General types)
+      spriteCache.enemy_ant = createCachedSprite(16, 16, (ctx) => {
+        ctx.fillStyle = '#d50000'; // bright red ant
+        ctx.fillRect(2, 6, 3, 3); // back segment
+        ctx.fillRect(6, 6, 3, 3); // middle
+        ctx.fillRect(10, 5, 4, 4); // head
+        ctx.fillStyle = '#111'; // legs & antennae
+        ctx.fillRect(4, 9, 1, 3);
+        ctx.fillRect(8, 9, 1, 3);
+        ctx.fillRect(12, 9, 1, 3);
+      });
+
+      spriteCache.enemy_gnat = createCachedSprite(16, 16, (ctx) => {
+        ctx.fillStyle = '#78909c'; // gray body
+        ctx.fillRect(5, 6, 6, 4);
+        ctx.fillStyle = '#e0f7fa'; // wings
+        ctx.fillRect(4, 3, 3, 3);
+        ctx.fillRect(9, 3, 3, 3);
+      });
+
+      spriteCache.enemy_pillbug = createCachedSprite(20, 20, (ctx) => {
+        ctx.fillStyle = '#9575cd'; // purple segments
+        ctx.fillRect(3, 5, 14, 10);
+        ctx.fillStyle = '#5e35b1';
+        ctx.fillRect(5, 5, 2, 10);
+        ctx.fillRect(9, 5, 2, 10);
+        ctx.fillRect(13, 5, 2, 10);
+      });
+
+      spriteCache.enemy_beetle = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#b71c1c'; // shiny red shell
+        ctx.fillRect(6, 6, 12, 12);
+        ctx.fillStyle = '#ffd700'; // gold borders
+        ctx.strokeRect(6, 6, 12, 12);
+        ctx.fillStyle = '#111'; // legs
+        ctx.fillRect(4, 8, 2, 2);
+        ctx.fillRect(4, 14, 2, 2);
+        ctx.fillRect(18, 8, 2, 2);
+        ctx.fillRect(18, 14, 2, 2);
+      });
+
+      spriteCache.enemy_wasp = createCachedSprite(20, 20, (ctx) => {
+        // Stripes yellow & black
+        ctx.fillStyle = '#ffd54f';
+        ctx.fillRect(4, 6, 12, 8);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(6, 6, 2, 8);
+        ctx.fillRect(10, 6, 2, 8);
+        ctx.fillRect(14, 6, 2, 8);
+        // wings
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillRect(8, 2, 4, 4);
+      });
+
+      spriteCache.enemy_grasshopper = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#76ff03'; // lime green long body
+        ctx.fillRect(4, 8, 16, 8);
+        // bent long legs
+        ctx.fillStyle = '#558b2f';
+        ctx.fillRect(14, 4, 3, 10);
+        ctx.fillRect(17, 12, 4, 2);
+      });
+
+      spriteCache.enemy_stag_beetle = createCachedSprite(32, 32, (ctx) => {
+        ctx.fillStyle = '#5d4037'; // brown body
+        ctx.fillRect(8, 10, 16, 16);
+        // massive horns
+        ctx.fillStyle = '#3e2723';
+        ctx.fillRect(8, 2, 2, 8);
+        ctx.fillRect(22, 2, 2, 8);
+        ctx.fillRect(6, 2, 4, 2);
+        ctx.fillRect(22, 2, 4, 2);
+      });
+
+      spriteCache.enemy_cicada = createCachedSprite(28, 28, (ctx) => {
+        ctx.fillStyle = '#8d6e63'; // brown body
+        ctx.fillRect(6, 6, 16, 16);
+        ctx.fillStyle = 'rgba(128, 203, 196, 0.4)'; // iridescent wings
+        ctx.fillRect(4, 10, 6, 14);
+        ctx.fillRect(18, 10, 6, 14);
+      });
+
+      spriteCache.enemy_mantis = createCachedSprite(32, 32, (ctx) => {
+        ctx.fillStyle = '#4caf50'; // green body
+        ctx.fillRect(12, 8, 8, 20);
+        // blade forearms
+        ctx.fillStyle = '#ff80ab'; // pink slashers
+        ctx.fillRect(6, 4, 4, 10);
+        ctx.fillRect(22, 4, 4, 10);
+      });
+
+      spriteCache.enemy_frost_moth = createCachedSprite(24, 24, (ctx) => {
+        ctx.fillStyle = '#bbdefb'; // icy blue wings
+        ctx.beginPath();
+        ctx.arc(6, 12, 6, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath();
+        ctx.arc(18, 12, 6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#1565c0'; // blue body
+        ctx.fillRect(11, 6, 2, 12);
+      });
+
+      spriteCache.enemy_snow_beetle = createCachedSprite(26, 26, (ctx) => {
+        ctx.fillStyle = '#f5f5f5'; // white shell
+        ctx.fillRect(6, 6, 14, 14);
+        ctx.fillStyle = '#90caf9'; // blue crystal stripes
+        ctx.fillRect(8, 6, 2, 14);
+        ctx.fillRect(14, 6, 2, 14);
+      });
+
+      spriteCache.enemy_glacial_spider = createCachedSprite(32, 32, (ctx) => {
+        ctx.fillStyle = '#e3f2fd'; // pale body
+        ctx.beginPath();
+        ctx.arc(16, 16, 6, 0, Math.PI*2);
+        ctx.fill();
+        // 8 legs
+        ctx.fillStyle = '#90caf9';
+        ctx.fillRect(6, 14, 20, 2);
+        ctx.fillRect(6, 10, 20, 2);
+        ctx.fillRect(6, 18, 20, 2);
+      });
+
+      // 6. Boss Icons
+      spriteCache.boss_aphid = createCachedSprite(48, 48, (ctx) => {
+        ctx.fillStyle = '#4caf50'; // giant green aphid
+        ctx.beginPath(); ctx.arc(24, 24, 18, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ff4081'; // pink spots
+        ctx.fillRect(14, 14, 4, 4);
+        ctx.fillRect(30, 14, 4, 4);
+        ctx.fillRect(22, 28, 4, 4);
+      });
+
+      spriteCache.boss_queen_wasp = createCachedSprite(64, 64, (ctx) => {
+        ctx.fillStyle = '#ffd700'; // gold
+        ctx.beginPath(); ctx.arc(32, 32, 20, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#880e4f'; // deep burgundy
+        ctx.fillRect(20, 28, 24, 8);
+        ctx.fillRect(20, 38, 24, 8);
+        // wings
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.4)'; // cyan translucent
+        ctx.fillRect(10, 10, 15, 15);
+        ctx.fillRect(39, 10, 15, 15);
+      });
+
+      spriteCache.boss_goliath = createCachedSprite(80, 80, (ctx) => {
+        ctx.fillStyle = '#111'; // black body
+        ctx.fillRect(20, 20, 40, 40);
+        ctx.fillStyle = '#ffd700'; // gold stripes
+        ctx.strokeRect(20, 20, 40, 40);
+        // giant horns
+        ctx.fillStyle = '#d50000';
+        ctx.fillRect(25, 2, 4, 18);
+        ctx.fillRect(51, 2, 4, 18);
+        ctx.fillRect(20, 2, 10, 4);
+        ctx.fillRect(50, 2, 10, 4);
+      });
+
+      spriteCache.boss_caterpillar = createCachedSprite(40, 40, (ctx) => {
+        // Just the head of the giant segments
+        ctx.fillStyle = '#9d4edd'; // purple body
+        ctx.beginPath(); ctx.arc(20, 20, 16, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#00ffff'; // glowing cyan eyes
+        ctx.fillRect(12, 12, 4, 4);
+        ctx.fillRect(24, 12, 4, 4);
+      });
+      
+      // Generate standard icons for menu screen season cards
+      drawSeasonIcon('c-ico-spring', 1);
+      drawSeasonIcon('c-ico-summer', 2);
+      drawSeasonIcon('c-ico-fall', 3);
+      drawSeasonIcon('c-ico-winter', 4);
+    }
+
+    function createCachedSprite(width, height, drawFn) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      drawFn(ctx);
+      return canvas;
+    }
+
+    function drawPlayerSprite(ctx, frame, isWalking) {
+      ctx.clearRect(0, 0, 32, 32);
+      let bob = (isWalking && frame === 1) ? 2 : 0;
+      
+      // Straw hat brim
+      ctx.fillStyle = '#ffd700'; // yellow gold hat
+      ctx.fillRect(4, 7 + bob, 24, 3);
+      ctx.fillRect(8, 2 + bob, 16, 5);
+      
+      // Hat band
+      ctx.fillStyle = '#8d6e63'; // brown
+      ctx.fillRect(8, 6 + bob, 16, 1);
+      
+      // Head
+      ctx.fillStyle = '#ffcca3'; // skin
+      ctx.fillRect(9, 10 + bob, 14, 8);
+      
+      // Eyes
+      ctx.fillStyle = '#111';
+      ctx.fillRect(11, 13 + bob, 2, 2);
+      ctx.fillRect(19, 13 + bob, 2, 2);
+      
+      // Body Shirt
+      ctx.fillStyle = '#2e7d32'; // forest green gardener shirt
+      ctx.fillRect(8, 18 + bob, 16, 8);
+      
+      // Overalls straps
+      ctx.fillStyle = '#8d6e63';
+      ctx.fillRect(10, 18 + bob, 2, 4);
+      ctx.fillRect(20, 18 + bob, 2, 4);
+      ctx.fillRect(10, 22 + bob, 12, 5);
+      
+      // Boots
+      ctx.fillStyle = '#3e2723';
+      if (isWalking && frame === 1) {
+        ctx.fillRect(8, 27, 6, 5);
+        ctx.fillRect(18, 28, 6, 4);
+      } else if (isWalking && frame === 0) {
+        ctx.fillRect(8, 28, 6, 4);
+        ctx.fillRect(18, 27, 6, 5);
+      } else {
+        ctx.fillRect(8, 27, 6, 5);
+        ctx.fillRect(18, 27, 6, 5);
+      }
+    }
+
+    function drawSeasonIcon(canvasId, seasonNum) {
+      const c = document.getElementById(canvasId);
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0,0,48,48);
+      
+      if (seasonNum === 1) { // Spring flower
+        ctx.fillStyle = '#a8ffab';
+        ctx.fillRect(4, 4, 40, 40);
+        ctx.fillStyle = '#ffb6d9'; // pink petals
+        ctx.fillRect(16, 16, 16, 16);
+        ctx.fillStyle = '#ffd700'; // gold center
+        ctx.fillRect(20, 20, 8, 8);
+      } else if (seasonNum === 2) { // Summer sun
+        ctx.fillStyle = '#ffdab9';
+        ctx.fillRect(4, 4, 40, 40);
+        ctx.fillStyle = '#ff5252'; // red sun
+        ctx.beginPath();
+        ctx.arc(24, 24, 12, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#ffd700'; // sunrays
+        ctx.fillRect(22, 4, 4, 4);
+        ctx.fillRect(22, 40, 4, 4);
+        ctx.fillRect(4, 22, 4, 4);
+        ctx.fillRect(40, 22, 4, 4);
+      } else if (seasonNum === 3) { // Fall leaf
+        ctx.fillStyle = '#ffe082';
+        ctx.fillRect(4, 4, 40, 40);
+        ctx.fillStyle = '#e65100'; // burnt orange leaf
+        ctx.fillRect(16, 12, 16, 20);
+        ctx.fillRect(12, 18, 24, 8);
+        ctx.fillStyle = '#3e2723'; // stem
+        ctx.fillRect(22, 32, 4, 6);
+      } else { // Winter snowflake
+        ctx.fillStyle = '#e3f2fd';
+        ctx.fillRect(4, 4, 40, 40);
+        ctx.fillStyle = '#00e5ff'; // ice cyan lines
+        ctx.fillRect(22, 8, 4, 32);
+        ctx.fillRect(8, 22, 32, 4);
+        ctx.fillRect(14, 14, 4, 4);
+        ctx.fillRect(30, 30, 4, 4);
+        ctx.fillRect(30, 14, 4, 4);
+        ctx.fillRect(14, 30, 4, 4);
+      }
+    }
+
+    // Render previews for UI planting bar
+    function initPlantingBarCanvases() {
+      const renderCropIcon = (id, cacheName) => {
+        const canv = document.getElementById(id);
+        if (!canv) return;
+        const ctx = canv.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(spriteCache[cacheName], 0, 0, 16, 32);
+      };
+      
+      renderCropIcon('canvas-crop-carrot', 'crop_carrot');
+      renderCropIcon('canvas-crop-sunflower', 'crop_sunflower');
+      renderCropIcon('canvas-crop-rose', 'crop_rose');
+      renderCropIcon('canvas-crop-corn', 'crop_corn');
+      renderCropIcon('canvas-crop-pumpkin', 'crop_pumpkin');
+      
+      // Companion Icon
+      const compC = document.getElementById('companion-icon-canvas');
+      if (compC) {
+        const compCtx = compC.getContext('2d');
+        compCtx.imageSmoothingEnabled = false;
+        compCtx.drawImage(spriteCache.comp_hedgehog, 0, 0, 24, 24);
+      }
+    }
+
+    /* =========================================================================
+       GAME SIMULATION & LOGIC
+       ========================================================================= */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // Game Core State
+    let gameState = {
+      phase: 'MENU', // MENU, INTRO, PLANTING, COMBAT, RESULTS, UPGRADES, GAMEOVER, VICTORY
+      season: 1,
+      wave: 1,
+      score: 0,
+      lives: 3,
+      hp: 100,
+      maxHp: 100,
+      seeds: 20,
+      water: 3.0,
+      currentWeapon: 1,
+      unlockedWeapons: [1, 2], // 1: Seed, 2: Thorn, 3: Whip, 4: Pollen, 5: Sunbeam
+      companionType: 'hedgehog',
+      companionLevel: 1,
+      companionXp: 0,
+      companionCooldownTimer: 0,
+      companionAbilityActive: false,
+      companionAbilityDuration: 0,
+      
+      difficulty: 'normal',
+      colorblind: 'none',
+      crt: true,
+      textScale: 1,
+      
+      speedBoostTimer: 0,
+      comboCount: 0,
+      comboTimer: 0,
+      
+      plantingTimer: 30, // seconds
+      combatTimer: 60,
+      bossHP: 0,
+      bossMaxHP: 100,
+      
+      keyboard: {},
+      mouse: { x: 640, y: 360, clicked: false },
+      
+      player: { x: 640, y: 360, vx: 0, vy: 0, angle: 0, lastShot: 0, width: 32, height: 32, frame: 0, frameTimer: 0 },
+      companion: { x: 600, y: 360 },
+      
+      plants: Array(48).fill(null).map((_, idx) => ({
+        index: idx,
+        x: (idx % 8) * 110 + 200,
+        y: Math.floor(idx / 8) * 80 + 130,
+        width: 100,
+        height: 70,
+        crop: null, // carrot, sunflower, etc.
+        growth: 0,
+        maxGrowth: 5.0,
+        watered: 100,
+        mature: false,
+        synergyActive: false
+      })),
+      
+      projectiles: [],
+      enemies: [],
+      particles: [],
+      drops: [],
+      shakeTimer: 0,
+      shakeAmount: 0
+    };
+
+    // Upgrade Options Lists
+    const UPGRADES_POOL = [
+      { id: 'hp', stat: 'MAX HEALTH UP', desc: '+15 Max HP & Heal Fully' },
+      { id: 'rate', stat: 'FIRE RATE BOOST', desc: '+20% Firing Rate All Weapons' },
+      { id: 'cooldown', stat: 'COMPANION ENHANCE', desc: '-3s Ability Cooldowns' },
+      { id: 'growth', stat: 'FERTILE GROUND', desc: '+25% Crop Growth Velocity' },
+      { id: 'damage', stat: 'SEED DAMAGE', desc: '+15% Projectile Piercing & Dmg' },
+      { id: 'crit', stat: 'CRIT SHOT', desc: '+10% Critical Strike Chance' }
+    ];
+    let selectedUpgradeOptions = [];
+
+    // Weapon Profiles
+    const WEAPONS = {
+      1: { name: "SEED GUN", fireRate: 150, damage: 10, speed: 8, cost: 0, type: 'seed' },
+      2: { name: "THORN SPRAY", fireRate: 400, damage: 14, speed: 6, cost: 0, type: 'thorn' },
+      3: { name: "VINE WHIP", fireRate: 600, damage: 28, speed: 0, cost: 0, type: 'whip' },
+      4: { name: "POLLEN BURST", fireRate: 1000, damage: 45, speed: 4, cost: 0, type: 'pollen' },
+      5: { name: "SUNBEAM", fireRate: 2000, damage: 80, speed: 12, cost: 0, type: 'sunbeam' }
+    };
+
+    // Companion Profiles
+    const COMPANIONS = {
+      hedgehog: { name: "HEDGEHOG", ability: "DEFENSE SHIELD", cooldown: 12, range: 120 },
+      ladybug: { name: "LADYBUG", ability: "SPOTS MARK", cooldown: 10, range: 180 },
+      butterfly: { name: "BUTTERFLY", ability: "POLLEN VORTEX", cooldown: 14, range: 100 },
+      owl: { name: "OWL", ability: "NIGHT VISIONS STUN", cooldown: 18, range: 250 },
+      snowfox: { name: "SNOW FOX", ability: "FROZEN TIME SLOW", cooldown: 20, range: 150 }
+    };
+
+    // UI elements handles
+    const hudOverlay = document.getElementById('hud-overlay');
+    const screenMenu = document.getElementById('screen-menu');
+    const screenIntro = document.getElementById('screen-intro');
+    const screenUpgrades = document.getElementById('screen-upgrades');
+    const screenGameOver = document.getElementById('screen-gameover');
+    const screenVictory = document.getElementById('screen-victory');
+    const screenSettings = document.getElementById('screen-settings');
+    const screenPause = document.getElementById('screen-pause');
+    const toast = document.getElementById('notification-toast');
+    const bossHud = document.getElementById('boss-hud');
+
+    // Selected crop for planting
+    let currentSelectedCrop = 'carrot';
+
+    /* =========================================================================
+       INPUT LISTENERS
+       ========================================================================= */
+    window.addEventListener('keydown', (e) => {
+      gameState.keyboard[e.key.toLowerCase()] = true;
+      
+      // Weapon Swaps
+      if (['1','2','3','4','5'].includes(e.key)) {
+        const wpNum = parseInt(e.key);
+        if (gameState.unlockedWeapons.includes(wpNum)) {
+          gameState.currentWeapon = wpNum;
+          updateHUDWeapons();
+          audio.playSFX('hit');
+        } else {
+          showToast("WEAPON LOCKED!");
+        }
+      }
+      
+      // Plant slot selection hotkeys
+      if (e.key.toLowerCase() === 'z') selectCropSlot('carrot', 0);
+      if (e.key.toLowerCase() === 'x') selectCropSlot('sunflower', 1);
+      if (e.key.toLowerCase() === 'c') selectCropSlot('rose', 2);
+      if (e.key.toLowerCase() === 'v') selectCropSlot('corn', 3);
+      if (e.key.toLowerCase() === 'b') selectCropSlot('pumpkin', 4);
+
+      // Companion Ability
+      if (e.key.toLowerCase() === 'q') {
+        triggerCompanionAbility();
+      }
+      
+      // Pause
+      if (e.key === 'Escape') {
+        if (gameState.phase === 'COMBAT' || gameState.phase === 'PLANTING') {
+          pauseGame();
+        } else if (gameState.phase === 'PAUSE') {
+          resumeGame();
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      gameState.keyboard[e.key.toLowerCase()] = false;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      // Translate to logical dimensions (1280x720)
+      gameState.mouse.x = (e.clientX - rect.left) * (1280 / rect.width);
+      gameState.mouse.y = (e.clientY - rect.top) * (720 / rect.height);
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 0) { // Left click
+        gameState.mouse.clicked = true;
+        
+        // Planting Click logic
+        if (gameState.phase === 'PLANTING') {
+          handlePlantingClick();
+        }
+      }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (e.button === 0) {
+        gameState.mouse.clicked = false;
+      }
+    });
+
+    // Disable right click menu on Canvas
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Planting Grid selector bar clicks
+    document.querySelectorAll('.crop-slot').forEach(slot => {
+      slot.addEventListener('click', () => {
+        const crop = slot.getAttribute('data-crop');
+        const index = parseInt(slot.id.split('-')[1]);
+        selectCropSlot(crop, index);
+        audio.playSFX('hit');
+      });
+    });
+
+    function selectCropSlot(crop, index) {
+      currentSelectedCrop = crop;
+      document.querySelectorAll('.crop-slot').forEach(s => s.classList.remove('selected'));
+      document.getElementById('slot-' + index).classList.add('selected');
+    }
+
+    /* =========================================================================
+       GAME START / INITIALIZATION & PROGRESSION FLOWS
+       ========================================================================= */
+    
+    // Setup and bind button triggers
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      audio.init();
+      audio.playSFX('harvest');
+      startSeason(gameState.season);
+    });
+
+    document.getElementById('btn-show-settings').addEventListener('click', () => {
+      audio.init();
+      showScreen('screen-settings');
+    });
+
+    document.getElementById('btn-close-settings').addEventListener('click', () => {
+      applySettings();
+      showScreen('screen-menu');
+    });
+
+    document.getElementById('btn-skip-intro').addEventListener('click', () => {
+      startPlantingPhase();
+    });
+
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      resetSeasonState();
+      startSeason(gameState.season);
+    });
+
+    document.getElementById('btn-menu-return').addEventListener('click', () => {
+      showScreen('screen-menu');
+    });
+
+    document.getElementById('btn-victory-replay').addEventListener('click', () => {
+      // Loop with New Game+ increases
+      gameState.season = 1;
+      gameState.wave = 1;
+      gameState.score = 0;
+      gameState.maxHp += 10;
+      gameState.hp = gameState.maxHp;
+      gameState.unlockedWeapons = [1, 2];
+      audio.playSFX('victory');
+      startSeason(1);
+    });
+
+    document.getElementById('btn-victory-menu').addEventListener('click', () => {
+      showScreen('screen-menu');
+    });
+
+    document.getElementById('btn-resume-game').addEventListener('click', () => {
+      resumeGame();
+    });
+
+    document.getElementById('btn-pause-menu').addEventListener('click', () => {
+      showScreen('screen-menu');
+    });
+
+    function showScreen(screenId) {
+      // Hide all screen overlays
+      document.querySelectorAll('.screen-overlay').forEach(el => el.classList.add('hidden'));
+      document.getElementById(screenId).classList.remove('hidden');
+      
+      if (screenId === 'screen-menu') {
+        gameState.phase = 'MENU';
+        hudOverlay.classList.add('hidden');
+      } else if (screenId === 'screen-settings') {
+        // Load sliders/selects values
+        document.getElementById('slider-volume').value = gameState.globalVolume;
+        document.getElementById('select-difficulty').value = gameState.difficulty;
+        document.getElementById('select-colorblind').value = gameState.colorblind;
+        document.getElementById('select-crt').value = gameState.crt ? 'on' : 'off';
+        document.getElementById('select-text-scale').value = gameState.textScale;
+      }
+    }
+
+    function selectSeason(s) {
+      gameState.season = s;
+      document.querySelectorAll('.card').forEach(c => c.style.borderColor = 'var(--border-neon)');
+      document.getElementById('btn-season-' + s).style.borderColor = 'var(--cyan)';
+      audio.init();
+      audio.setSeason(s);
+      audio.playSFX('plant');
+    }
+
+    function applySettings() {
+      gameState.globalVolume = parseFloat(document.getElementById('slider-volume').value);
+      audio.setVolume(gameState.globalVolume);
+      
+      gameState.difficulty = document.getElementById('select-difficulty').value;
+      gameState.colorblind = document.getElementById('select-colorblind').value;
+      
+      const crtVal = document.getElementById('select-crt').value;
+      gameState.crt = (crtVal === 'on');
+      if (gameState.crt) {
+        document.body.classList.add('crt-effect');
+      } else {
+        document.body.classList.remove('crt-effect');
+      }
+      
+      gameState.textScale = parseFloat(document.getElementById('select-text-scale').value);
+      document.documentElement.style.setProperty('--ui-scale', gameState.textScale);
+      
+      // Update body class for colorblind theme overrides
+      document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
+      if (gameState.colorblind !== 'none') {
+        document.body.classList.add(gameState.colorblind);
+      }
+      
+      saveGameProgress();
+    }
+
+    function startSeason(seasonNum) {
+      gameState.season = seasonNum;
+      audio.setSeason(seasonNum);
+      
+      // Reset lives & health
+      gameState.lives = 3;
+      gameState.hp = gameState.maxHp;
+      gameState.wave = 1;
+      
+      // Setup companion based on season unlocked
+      if (seasonNum === 1) {
+        gameState.companionType = 'hedgehog';
+        gameState.unlockedWeapons = [1, 2];
+      } else if (seasonNum === 2) {
+        gameState.companionType = 'ladybug';
+        gameState.unlockedWeapons = [1, 2, 3];
+      } else if (seasonNum === 3) {
+        gameState.companionType = 'butterfly';
+        gameState.unlockedWeapons = [1, 2, 3, 4];
+      } else if (seasonNum === 4) {
+        gameState.companionType = 'owl';
+        gameState.unlockedWeapons = [1, 2, 3, 4, 5];
+      }
+      
+      // Clear game entities
+      gameState.enemies = [];
+      gameState.projectiles = [];
+      gameState.particles = [];
+      gameState.drops = [];
+      
+      // Reset crop grid
+      gameState.plants.forEach(p => {
+        p.crop = null;
+        p.mature = false;
+        p.growth = 0;
+        p.synergyActive = false;
+      });
+
+      // Update UI displays
+      updateHUDWeapons();
+      updateHUDResources();
+      
+      // Show season intro overlay
+      const titles = ["", "SPRING MEADOW", "SUMMER ACCELERATION", "FALL HARVEST", "WINTER WONDERLAND"];
+      const descs = [
+        "",
+        "Flowers are blooming, and tiny ants have woken up hungry. Protect the spring garden grids!",
+        "Intense heat spawns fast wasp swarms and charging armored beetles. Sunbeam weapon unlocked!",
+        "Mantis slashers prowl under orange skies. Watch out for slow, powerful charging Goliath Beetle!",
+        "Frozen winds invite Glacial Spiders and the modular multi-segment Eternal Caterpillar boss!"
+      ];
+      
+      document.getElementById('intro-title').innerText = "SEASON " + seasonNum + ": " + titles[seasonNum];
+      document.getElementById('intro-desc').innerText = descs[seasonNum];
+      
+      showScreen('screen-intro');
+      gameState.phase = 'INTRO';
+    }
+
+    function resetSeasonState() {
+      gameState.score = 0;
+      gameState.seeds = 20;
+      gameState.water = 3.0;
+    }
+
+    function startPlantingPhase() {
+      gameState.phase = 'PLANTING';
+      hudOverlay.classList.remove('hidden');
+      document.querySelectorAll('.screen-overlay').forEach(el => el.classList.add('hidden'));
+      
+      gameState.plantingTimer = 30; // 30 seconds to plant
+      
+      // Position player in center of grid
+      gameState.player.x = 640;
+      gameState.player.y = 360;
+      gameState.player.vx = 0;
+      gameState.player.vy = 0;
+      
+      audio.playSFX('plant');
+      showToast("PLANTING PHASE - PLACE DEFENSES!");
+    }
+
+    function startCombatPhase() {
+      gameState.phase = 'COMBAT';
+      showToast("SWARM APPROACHING! DEFEND!");
+      audio.playSFX('boss_spawn');
+      
+      // Compute combat duration
+      if (gameState.wave === 5) {
+        gameState.phase = 'BOSS_COMBAT';
+        spawnBossEnemy();
+      } else {
+        gameState.combatTimer = 45 + gameState.wave * 10;
+      }
+      
+      // Generate some spawn points for particles
+      triggerScreenShake(6, 15);
+    }
+
+    function triggerScreenShake(amount, duration) {
+      gameState.shakeAmount = amount;
+      gameState.shakeTimer = duration;
+    }
+
+    /* =========================================================================
+       PLANTING SYSTEM (GRID PLACEMENT & GROWTHS)
+       ========================================================================= */
+    const CROP_STATS = {
+      carrot: { costSeeds: 1, costWater: 0.5, maxHP: 60, growTime: 4, desc: "Blocker Wall" },
+      sunflower: { costSeeds: 2, costWater: 0.8, maxHP: 40, growTime: 6, desc: "Speeds adjacent growth" },
+      rose: { costSeeds: 3, costWater: 1.2, maxHP: 50, growTime: 8, desc: "Hurts touching pests" },
+      corn: { costSeeds: 4, costWater: 1.5, maxHP: 40, growTime: 10, desc: "Explodes when shot" },
+      pumpkin: { costSeeds: 5, costWater: 2.0, maxHP: 120, growTime: 12, desc: "Ultra-heavy cover" }
+    };
+
+    function handlePlantingClick() {
+      // Find which grid tile mouse is hovering on
+      const hoverIndex = getGridTileIndexAt(gameState.mouse.x, gameState.mouse.y);
+      if (hoverIndex === -1) return;
+      
+      const tile = gameState.plants[hoverIndex];
+      const stats = CROP_STATS[currentSelectedCrop];
+      
+      if (tile.crop === null) {
+        // Check resources
+        if (gameState.seeds >= stats.costSeeds && gameState.water >= stats.costWater) {
+          gameState.seeds -= stats.costSeeds;
+          gameState.water -= stats.costWater;
+          
+          tile.crop = currentSelectedCrop;
+          tile.growth = 0;
+          tile.mature = false;
+          tile.maxHP = stats.maxHP;
+          tile.hp = stats.maxHP;
+          tile.growTime = stats.growTime;
+          
+          // Sound & particle
+          audio.playSFX('plant');
+          spawnPlantParticles(tile.x + 50, tile.y + 35, '#a8ffab', 8);
+          updateHUDResources();
+          
+          // Recalculate synergies
+          checkSynergyPatterns();
+        } else {
+          showToast("NOT ENOUGH RESOURCES!");
+        }
+      } else {
+        // If clicked mature crop, harvest it!
+        if (tile.mature) {
+          harvestTile(tile);
+        } else {
+          // Dig it up (refund 50% resources)
+          gameState.seeds += Math.floor(stats.costSeeds * 0.5);
+          gameState.water += parseFloat((stats.costWater * 0.5).toFixed(1));
+          tile.crop = null;
+          tile.mature = false;
+          tile.growth = 0;
+          audio.playSFX('hit');
+          updateHUDResources();
+          checkSynergyPatterns();
+        }
+      }
+    }
+
+    function harvestTile(tile) {
+      const stats = CROP_STATS[tile.crop];
+      // Harvest awards: seeds + water back with a profit
+      const seedsHarvested = stats.costSeeds + 1;
+      const waterHarvested = stats.costWater + 0.3;
+      
+      gameState.seeds += seedsHarvested;
+      gameState.water += parseFloat(waterHarvested.toFixed(1));
+      gameState.score += 150;
+      
+      // Speed boost
+      gameState.speedBoostTimer = 180; // 3 seconds
+      
+      audio.playSFX('harvest');
+      spawnPlantParticles(tile.x + 50, tile.y + 35, '#ffd700', 15);
+      
+      // Floating text
+      spawnFloatingText(tile.x + 50, tile.y + 10, `+${seedsHarvested} 🌱 +${waterHarvested.toFixed(1)} 💧`, '#ffd700');
+      
+      // Remove crop
+      tile.crop = null;
+      tile.mature = false;
+      tile.growth = 0;
+      
+      updateHUDResources();
+      checkSynergyPatterns();
+    }
+
+    function checkSynergyPatterns() {
+      // Clear synergy
+      gameState.plants.forEach(p => p.synergyActive = false);
+      
+      // Adjacency checklist (Up, Down, Left, Right)
+      const getAdjacent = (idx) => {
+        const row = Math.floor(idx / 8);
+        const col = idx % 8;
+        const res = [];
+        if (row > 0) res.push(idx - 8);
+        if (row < 5) res.push(idx + 8);
+        if (col > 0) res.push(idx - 1);
+        if (col < 7) res.push(idx + 1);
+        return res;
+      };
+      
+      // 1. Sunflower synergy: speeds up growth of adjacent tiles
+      gameState.plants.forEach((tile, idx) => {
+        if (tile.crop === 'sunflower' && tile.mature) {
+          const adj = getAdjacent(idx);
+          adj.forEach(aIdx => {
+            const adjTile = gameState.plants[aIdx];
+            if (adjTile.crop && !adjTile.mature) {
+              adjTile.synergyActive = true;
+            }
+          });
+        }
+      });
+      
+      // 2. Rose thorns: sharing space with another rose boosts thorn count/size
+      gameState.plants.forEach((tile, idx) => {
+        if (tile.crop === 'rose') {
+          const adj = getAdjacent(idx);
+          const adjacentRoses = adj.some(aIdx => gameState.plants[aIdx].crop === 'rose');
+          if (adjacentRoses) {
+            tile.synergyActive = true;
+          }
+        }
+      });
+    }
+
+    function getGridTileIndexAt(x, y) {
+      for (let i = 0; i < gameState.plants.length; i++) {
+        const p = gameState.plants[i];
+        if (x >= p.x && x <= p.x + p.width && y >= p.y && y <= p.y + p.height) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    /* =========================================================================
+       COMBAT & WAVE PROGRESSION & DAMAGE ACTIONS
+       ========================================================================= */
+    
+    function spawnBossEnemy() {
+      bossHud.classList.remove('hidden');
+      
+      const bossNames = ["", "APHID CLUSTER", "QUEEN WASP", "GOLIATH BEETLE", "ETERNAL CATERPILLAR"];
+      const bossMaxHPs = [0, 400, 600, 900, 1500];
+      const bossName = bossNames[gameState.season];
+      const maxHp = bossMaxHPs[gameState.season] * (gameState.difficulty === 'easy' ? 0.7 : (gameState.difficulty === 'hard' ? 1.5 : 1));
+      
+      document.getElementById('boss-name').innerText = "BOSS: " + bossName;
+      
+      gameState.bossMaxHP = maxHp;
+      gameState.bossHP = maxHp;
+      
+      const newBoss = {
+        id: 'boss',
+        x: 1280 + 100,
+        y: 360,
+        vx: -1.5,
+        vy: 0,
+        hp: maxHp,
+        maxHp: maxHp,
+        width: 80,
+        height: 80,
+        type: 'boss',
+        season: gameState.season,
+        spawnTimer: 0,
+        stateTimer: 0,
+        bossPhase: 1,
+        hitFlash: 0
+      };
+      
+      gameState.enemies.push(newBoss);
+    }
+
+    function triggerCompanionAbility() {
+      if (gameState.companionCooldownTimer > 0 || gameState.companionAbilityActive) return;
+      
+      gameState.companionAbilityActive = true;
+      gameState.companionAbilityDuration = 300; // 5 seconds (60 fps = 300 frames)
+      audio.playSFX('level_up');
+      
+      const comp = COMPANIONS[gameState.companionType];
+      showToast(`${comp.name} ABILITY: ${comp.ability}!`);
+      
+      // Radial effect particles
+      spawnExplosionParticles(gameState.companion.x, gameState.companion.y, '#d8b8ff', 30);
+      
+      // Specific ability effects
+      if (gameState.companionType === 'ladybug') {
+        // Mark all active enemies
+        gameState.enemies.forEach(e => {
+          e.marked = true;
+          spawnFloatingText(e.x, e.y, "MARKED", '#ff1493');
+        });
+      } else if (gameState.companionType === 'owl') {
+        // Stun screen enemies
+        gameState.enemies.forEach(e => {
+          e.stunned = 200; // ~3 seconds
+          spawnFloatingText(e.x, e.y, "STUNNED", '#ffd700');
+        });
+      } else if (gameState.companionType === 'snowfox') {
+        // Slow is handled globally in update loop
+      }
+    }
+
+    function damageEnemy(enemy, dmg, isCrit) {
+      if (enemy.marked) dmg *= 1.25;
+      
+      enemy.hp -= dmg;
+      enemy.hitFlash = 5;
+      
+      // Sound & floating texts
+      audio.playSFX('hit');
+      spawnFloatingText(enemy.x, enemy.y - 15, `${Math.floor(dmg)}`, isCrit ? 'var(--hot-pink)' : '#fff', isCrit);
+      spawnBloodParticles(enemy.x, enemy.y, enemy.type === 'boss' ? '#ff4081' : '#ff5252', 5);
+      
+      // Recoil
+      if (enemy.type !== 'boss') {
+        enemy.x += Math.cos(gameState.player.angle) * 8;
+        enemy.y += Math.sin(gameState.player.angle) * 8;
+      }
+      
+      // Update Boss HP bar
+      if (enemy.type === 'boss') {
+        gameState.bossHP = enemy.hp;
+        const fillPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+        document.getElementById('boss-hp-fill').style.width = fillPercent + '%';
+      }
+
+      if (enemy.hp <= 0) {
+        killEnemy(enemy);
+      }
+    }
+
+    function killEnemy(enemy) {
+      // Remove enemy
+      const idx = gameState.enemies.indexOf(enemy);
+      if (idx > -1) gameState.enemies.splice(idx, 1);
+      
+      // Floating points
+      gameState.score += enemy.type === 'boss' ? 5000 : 100;
+      
+      // Combo increment
+      gameState.comboCount++;
+      gameState.comboTimer = 180; // 3 seconds to chain
+      updateComboHUD();
+      
+      // Drops seeds/water
+      const seedChance = enemy.type === 'boss' ? 1.0 : 0.45;
+      if (Math.random() < seedChance) {
+        gameState.drops.push({
+          x: enemy.x,
+          y: enemy.y,
+          type: Math.random() < 0.25 ? 'water' : 'seed',
+          vx: (Math.random() - 0.5) * 3,
+          vy: -4,
+          gravity: 0.2,
+          life: 400
+        });
+      }
+      
+      // Check Boss Completion
+      if (enemy.type === 'boss') {
+        bossHud.classList.add('hidden');
+        seasonComplete();
+      }
+    }
+
+    function playerTakeDamage() {
+      if (gameState.companionAbilityActive && gameState.companionType === 'hedgehog') {
+        // Reduced damage shield active
+        audio.playSFX('hit');
+        return;
+      }
+      
+      gameState.hp -= 20;
+      triggerScreenShake(8, 12);
+      audio.playSFX('hit');
+      
+      if (gameState.hp <= 0) {
+        gameState.lives--;
+        gameState.hp = gameState.maxHp;
+        
+        if (gameState.lives < 0) {
+          gameOver();
+        }
+      }
+      updateHUDResources();
+    }
+
+    function updateComboHUD() {
+      const badge = document.getElementById('val-combo-badge');
+      if (gameState.comboCount >= 5) {
+        badge.classList.remove('hidden');
+        badge.innerText = `COMBO ${gameState.comboCount}x`;
+        // Multiplier colors
+        if (gameState.comboCount >= 20) badge.style.color = 'var(--purple)';
+        else if (gameState.comboCount >= 10) badge.style.color = 'var(--hot-pink)';
+        else badge.style.color = 'var(--cyan)';
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function updateHUDResources() {
+      document.getElementById('val-seeds').innerText = gameState.seeds;
+      document.getElementById('val-water').innerText = gameState.water.toFixed(1);
+      
+      // Hearts meter
+      let heartsStr = "";
+      for (let i = 0; i < 3; i++) {
+        heartsStr += i < gameState.lives ? "❤️ " : "🖤 ";
+      }
+      document.getElementById('val-lives').innerText = heartsStr;
+      
+      // HP Bar
+      const hpFill = document.getElementById('val-hp-fill');
+      const hpPercent = Math.max(0, (gameState.hp / gameState.maxHp) * 100);
+      hpFill.style.width = hpPercent + '%';
+      
+      // Timer update
+      const timerLbl = document.getElementById('phase-timer-lbl');
+      if (gameState.phase === 'PLANTING') {
+        timerLbl.innerText = "PREPARE TIME: " + Math.ceil(gameState.plantingTimer) + "s";
+      } else if (gameState.phase === 'COMBAT') {
+        timerLbl.innerText = "WAVE COMBAT: " + Math.ceil(gameState.combatTimer) + "s";
+      } else {
+        timerLbl.innerText = "BOSS COMBAT";
+      }
+
+      // Companion Cooldown display
+      const coolBadge = document.getElementById('val-comp-cooldown');
+      if (gameState.companionCooldownTimer > 0) {
+        coolBadge.innerText = "COOLDOWN: " + Math.ceil(gameState.companionCooldownTimer) + "s";
+      } else {
+        coolBadge.innerText = "COOLDOWN: READY";
+      }
+    }
+
+    function updateHUDWeapons() {
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById('wp-' + i);
+        if (gameState.currentWeapon === i) {
+          el.style.color = 'var(--cyan)';
+          el.style.fontWeight = 'bold';
+          el.innerText = `[${i}] ${WEAPONS[i].name} (Equipped)`;
+        } else if (gameState.unlockedWeapons.includes(i)) {
+          el.style.color = 'var(--text-main)';
+          el.style.fontWeight = 'normal';
+          el.innerText = `[${i}] ${WEAPONS[i].name}`;
+        } else {
+          el.style.color = '#444';
+          el.style.fontWeight = 'normal';
+          el.innerText = `[${i}] LOCKED`;
+        }
+      }
+    }
+
+    function showToast(msg) {
+      toast.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2500);
+    }
+
+    /* =========================================================================
+       SEQUENCING & GAME PROGRESSIONS (RESULTS, UPGRADES, SAVE LOGICS)
+       ========================================================================= */
+    
+    function pauseGame() {
+      if (gameState.phase === 'PAUSE') return;
+      gameState.lastPhase = gameState.phase;
+      gameState.phase = 'PAUSE';
+      showScreen('screen-pause');
+    }
+
+    function resumeGame() {
+      gameState.phase = gameState.lastPhase;
+      document.getElementById('screen-pause').classList.add('hidden');
+    }
+
+    function gameOver() {
+      gameState.phase = 'GAMEOVER';
+      document.getElementById('gameover-score').innerText = gameState.score;
+      showScreen('screen-gameover');
+      audio.playSFX('defeat');
+    }
+
+    function seasonComplete() {
+      audio.playSFX('victory');
+      triggerScreenShake(12, 40);
+      
+      // Determine if there are next seasons
+      if (gameState.season < 4) {
+        gameState.phase = 'UPGRADES';
+        // Randomize 3 upgrades
+        selectedUpgradeOptions = [];
+        const pool = [...UPGRADES_POOL];
+        for (let i = 0; i < 3; i++) {
+          const randIdx = Math.floor(Math.random() * pool.length);
+          selectedUpgradeOptions.push(pool[randIdx]);
+          pool.splice(randIdx, 1);
+        }
+        
+        // Populate upgrade screen DOM
+        for (let i = 0; i < 3; i++) {
+          document.getElementById('up-stat-' + i).innerText = selectedUpgradeOptions[i].stat;
+          document.getElementById('up-desc-' + i).innerText = selectedUpgradeOptions[i].desc;
+        }
+        
+        showScreen('screen-upgrades');
+      } else {
+        // Complete game victory
+        gameState.phase = 'VICTORY';
+        document.getElementById('victory-score').innerText = gameState.score;
+        showScreen('screen-victory');
+        saveGameProgress();
+      }
+    }
+
+    function chooseUpgrade(idx) {
+      const up = selectedUpgradeOptions[idx];
+      
+      if (up.id === 'hp') {
+        gameState.maxHp += 15;
+        gameState.hp = gameState.maxHp;
+      } else if (up.id === 'rate') {
+        // Boost weapon speeds
+        Object.keys(WEAPONS).forEach(key => {
+          WEAPONS[key].fireRate *= 0.8;
+        });
+      } else if (up.id === 'cooldown') {
+        // Reduce ability cooldowns
+        Object.keys(COMPANIONS).forEach(key => {
+          COMPANIONS[key].cooldown = Math.max(5, COMPANIONS[key].cooldown - 3);
+        });
+      } else if (up.id === 'growth') {
+        // Speed up plant growth globally
+        Object.keys(CROP_STATS).forEach(key => {
+          CROP_STATS[key].growTime *= 0.75;
+        });
+      } else if (up.id === 'damage') {
+        // Incremented damage
+        Object.keys(WEAPONS).forEach(key => {
+          WEAPONS[key].damage += 5;
+        });
+      } else if (up.id === 'crit') {
+        // (Handled directly on shooting)
+        gameState.score += 1000;
+      }
+      
+      showToast("UPGRADE LOCKED IN!");
+      
+      // Proceed to next season
+      gameState.season++;
+      saveGameProgress();
+      startSeason(gameState.season);
+    }
+
+    /* =========================================================================
+       LOCAL STORAGE / SAVE SYSTEM
+       ========================================================================= */
+    function saveGameProgress() {
+      const saveData = {
+        season: gameState.season,
+        score: gameState.score,
+        difficulty: gameState.difficulty,
+        colorblind: gameState.colorblind,
+        crt: gameState.crt,
+        textScale: gameState.textScale,
+        maxHp: gameState.maxHp
+      };
+      localStorage.setItem('pixel_garden_save', JSON.stringify(saveData));
+    }
+
+    function loadGameProgress() {
+      const saved = localStorage.getItem('pixel_garden_save');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          gameState.season = data.season || 1;
+          gameState.score = data.score || 0;
+          gameState.difficulty = data.difficulty || 'normal';
+          gameState.colorblind = data.colorblind || 'none';
+          gameState.crt = data.crt !== undefined ? data.crt : true;
+          gameState.textScale = data.textScale || 1;
+          gameState.maxHp = data.maxHp || 100;
+          
+          applySettings();
+        } catch (e) {
+          console.error("Failed to load save data", e);
+        }
+      }
+    }
+
+    /* =========================================================================
+       SIMULATION LOOP ENTITIES & PHYSICS UPDATE TICKERS
+       ========================================================================= */
+    
+    function fireWeapon() {
+      const now = Date.now();
+      const wp = WEAPONS[gameState.currentWeapon];
+      
+      if (now - gameState.player.lastShot < wp.fireRate) return;
+      
+      gameState.player.lastShot = now;
+      
+      // Determine direction vector
+      const dx = gameState.mouse.x - gameState.player.x;
+      const dy = gameState.mouse.y - gameState.player.y;
+      const angle = Math.atan2(dy, dx);
+      gameState.player.angle = angle;
+      
+      switch (gameState.currentWeapon) {
+        case 1: { // Seed Gun
+          audio.playSFX('shoot');
+          gameState.projectiles.push({
+            x: gameState.player.x,
+            y: gameState.player.y,
+            vx: Math.cos(angle) * wp.speed,
+            vy: Math.sin(angle) * wp.speed,
+            damage: wp.damage,
+            radius: 5,
+            color: '#a8ffab',
+            type: 'seed',
+            bounces: 2,
+            piercing: 1
+          });
+          break;
+        }
+        case 2: { // Thorn Spray (Cone of 3)
+          audio.playSFX('shoot');
+          const angles = [angle - 0.2, angle, angle + 0.2];
+          angles.forEach(ang => {
+            gameState.projectiles.push({
+              x: gameState.player.x,
+              y: gameState.player.y,
+              vx: Math.cos(ang) * wp.speed,
+              vy: Math.sin(ang) * wp.speed,
+              damage: wp.damage,
+              radius: 4,
+              color: '#d8b8ff',
+              type: 'thorn',
+              bounces: 0,
+              piercing: 1,
+              dotActive: true
+            });
+          });
+          break;
+        }
+        case 3: { // Vine Whip (Melee sweep animation)
+          audio.playSFX('whip');
+          // Add a melee sweep projectile
+          gameState.projectiles.push({
+            x: gameState.player.x + Math.cos(angle) * 30,
+            y: gameState.player.y + Math.sin(angle) * 30,
+            vx: 0, vy: 0,
+            damage: wp.damage,
+            radius: 40,
+            color: '#00ff00',
+            type: 'whip',
+            duration: 10,
+            piercing: 99
+          });
+          
+          // Pull nearest enemy closer
+          let nearest = null;
+          let minDist = 300;
+          gameState.enemies.forEach(e => {
+            const dist = Math.hypot(e.x - gameState.player.x, e.y - gameState.player.y);
+            if (dist < minDist) {
+              minDist = dist;
+              nearest = e;
+            }
+          });
+          if (nearest && nearest.type !== 'boss') {
+            nearest.x = gameState.player.x + Math.cos(angle) * 50;
+            nearest.y = gameState.player.y + Math.sin(angle) * 50;
+          }
+          break;
+        }
+        case 4: { // Pollen Burst
+          audio.playSFX('pollen');
+          gameState.projectiles.push({
+            x: gameState.player.x,
+            y: gameState.player.y,
+            vx: Math.cos(angle) * wp.speed,
+            vy: Math.sin(angle) * wp.speed,
+            damage: wp.damage,
+            radius: 12,
+            color: '#ffd700',
+            type: 'pollen',
+            bounces: 0,
+            piercing: 1
+          });
+          break;
+        }
+        case 5: { // Sunbeam (Charging long piercer)
+          audio.playSFX('laser');
+          gameState.projectiles.push({
+            x: gameState.player.x,
+            y: gameState.player.y,
+            vx: Math.cos(angle) * wp.speed,
+            vy: Math.sin(angle) * wp.speed,
+            damage: wp.damage,
+            radius: 6,
+            color: '#00ffff',
+            type: 'sunbeam',
+            piercing: 8
+          });
+          break;
+        }
+      }
+    }
+
+    function spawnPlantParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        gameState.particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          color: color,
+          size: Math.random() * 4 + 2,
+          life: 40 + Math.random() * 30
+        });
+      }
+    }
+
+    function spawnBloodParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        gameState.particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          color: color,
+          size: Math.random() * 5 + 3,
+          life: 20 + Math.random() * 20
+        });
+      }
+    }
+
+    function spawnExplosionParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+        gameState.particles.push({
+          x: x, y: y,
+          vx: Math.cos(ang) * speed,
+          vy: Math.sin(ang) * speed,
+          color: color,
+          size: Math.random() * 6 + 4,
+          life: 50 + Math.random() * 30
+        });
+      }
+    }
+
+    function spawnFloatingText(x, y, text, color, isBig = false) {
+      gameState.particles.push({
+        x: x, y: y,
+        vx: 0,
+        vy: -1.2,
+        color: color,
+        text: text,
+        font: isBig ? 'bold 12px var(--font-retro)' : '9px var(--font-retro)',
+        life: 60
+      });
+    }
+
+    /* Spawn Swarms based on Wave & Season */
+    function spawnWaveEnemy() {
+      // Find edge position
+      let spawnX = 0, spawnY = 0;
+      if (Math.random() < 0.5) {
+        spawnX = Math.random() < 0.5 ? -20 : 1300;
+        spawnY = Math.random() * 720;
+      } else {
+        spawnX = Math.random() * 1280;
+        spawnY = Math.random() < 0.5 ? -20 : 740;
+      }
+      
+      let enemyType = 'ant';
+      let hp = 15;
+      let speed = 2.0;
+      let size = 16;
+      let cache = 'enemy_ant';
+      
+      const r = Math.random();
+      
+      if (gameState.season === 1) { // Spring
+        if (r < 0.4) {
+          enemyType = 'gnat'; hp = 8; speed = 2.8; cache = 'enemy_gnat';
+        } else if (r < 0.7) {
+          enemyType = 'ant'; hp = 15; speed = 2.0; cache = 'enemy_ant';
+        } else {
+          enemyType = 'pillbug'; hp = 24; speed = 1.2; cache = 'enemy_pillbug';
+        }
+      } 
+      else if (gameState.season === 2) { // Summer
+        if (r < 0.4) {
+          enemyType = 'wasp'; hp = 25; speed = 3.2; cache = 'enemy_wasp';
+        } else if (r < 0.7) {
+          enemyType = 'beetle'; hp = 40; speed = 1.8; cache = 'enemy_beetle';
+        } else {
+          enemyType = 'grasshopper'; hp = 30; speed = 2.4; cache = 'enemy_grasshopper';
+        }
+      }
+      else if (gameState.season === 3) { // Fall
+        if (r < 0.4) {
+          enemyType = 'cicada'; hp = 55; speed = 2.0; cache = 'enemy_cicada';
+        } else if (r < 0.7) {
+          enemyType = 'stag_beetle'; hp = 70; speed = 1.4; cache = 'enemy_stag_beetle';
+        } else {
+          enemyType = 'mantis'; hp = 60; speed = 2.2; cache = 'enemy_mantis';
+        }
+      }
+      else { // Winter
+        if (r < 0.45) {
+          enemyType = 'frost_moth'; hp = 50; speed = 1.6; cache = 'enemy_frost_moth';
+        } else if (r < 0.75) {
+          enemyType = 'snow_beetle'; hp = 60; speed = 1.5; cache = 'enemy_snow_beetle';
+        } else {
+          enemyType = 'glacial_spider'; hp = 75; speed = 1.8; cache = 'enemy_glacial_spider';
+        }
+      }
+      
+      // Scaling with wave & difficulty
+      const diffMult = gameState.difficulty === 'easy' ? 0.7 : (gameState.difficulty === 'hard' ? 1.4 : 1.0);
+      const waveMult = 1.0 + (gameState.wave - 1) * 0.15;
+      
+      gameState.enemies.push({
+        id: Math.random().toString(),
+        x: spawnX,
+        y: spawnY,
+        vx: 0, vy: 0,
+        hp: hp * diffMult * waveMult,
+        maxHp: hp * diffMult * waveMult,
+        speed: speed * (0.8 + Math.random() * 0.4),
+        type: enemyType,
+        cacheName: cache,
+        width: size,
+        height: size,
+        hitFlash: 0,
+        marked: false,
+        stunned: 0
+      });
+    }
+
+    function update() {
+      // 1. Shake Timer decay
+      if (gameState.shakeTimer > 0) gameState.shakeTimer--;
+      
+      if (gameState.phase === 'PAUSE' || gameState.phase === 'MENU' || gameState.phase === 'INTRO' || gameState.phase === 'UPGRADES') {
+        return;
+      }
+      
+      // 2. Combo Timer decay
+      if (gameState.comboTimer > 0) {
+        gameState.comboTimer--;
+        if (gameState.comboTimer <= 0) {
+          gameState.comboCount = 0;
+          updateComboHUD();
+        }
+      }
+      
+      // 3. Speed Boost Timer decay
+      if (gameState.speedBoostTimer > 0) {
+        gameState.speedBoostTimer--;
+      }
+
+      // 4. Companion Ability duration decay & Cooldown ticks
+      if (gameState.companionAbilityActive) {
+        gameState.companionAbilityDuration--;
+        if (gameState.companionAbilityDuration <= 0) {
+          gameState.companionAbilityActive = false;
+          gameState.companionCooldownTimer = COMPANIONS[gameState.companionType].cooldown;
+        }
+      }
+      if (gameState.companionCooldownTimer > 0) {
+        gameState.companionCooldownTimer -= 1/60;
+        if (gameState.companionCooldownTimer < 0) gameState.companionCooldownTimer = 0;
+      }
+      
+      // =======================================================================
+      // A. PHASE TICKERS
+      // =======================================================================
+      if (gameState.phase === 'PLANTING') {
+        gameState.plantingTimer -= 1/60;
+        
+        // Growth updates for plants
+        gameState.plants.forEach(p => {
+          if (p.crop && !p.mature) {
+            let mult = p.synergyActive ? 1.5 : 1.0;
+            p.growth += (1/60) * mult;
+            if (p.growth >= p.growTime) {
+              p.mature = true;
+              p.growth = p.growTime;
+              spawnPlantParticles(p.x + 50, p.y + 35, '#ffd700', 5);
+            }
+          }
+        });
+        
+        if (gameState.plantingTimer <= 0) {
+          startCombatPhase();
+        }
+        updateHUDResources();
+      }
+      
+      else if (gameState.phase === 'COMBAT') {
+        gameState.combatTimer -= 1/60;
+        
+        // Random spawns based on difficulty/wave rates
+        const spawnChance = 0.02 + (gameState.wave * 0.005);
+        if (Math.random() < spawnChance && gameState.enemies.length < 25) {
+          spawnWaveEnemy();
+        }
+        
+        if (gameState.combatTimer <= 0 && gameState.enemies.length === 0) {
+          // Wave clear
+          if (gameState.wave < 5) {
+            gameState.wave++;
+            updateHUDResources();
+            startPlantingPhase();
+          } else {
+            // Defeated normal waves, next is Boss Wave
+            startCombatPhase(); // triggers boss spawn
+          }
+        }
+        updateHUDResources();
+      }
+      
+      else if (gameState.phase === 'BOSS_COMBAT') {
+        // Boss combat continues until boss defeated
+        // Spawns small minions
+        if (Math.random() < 0.015 && gameState.enemies.length < 10) {
+          spawnWaveEnemy();
+        }
+      }
+      
+      // =======================================================================
+      // B. PLAYER PHYSICS & CONTROL UPDATES
+      // =======================================================================
+      let moveSpeed = gameState.speedBoostTimer > 0 ? 5.5 : 3.8;
+      let vx = 0;
+      let vy = 0;
+      
+      if (gameState.keyboard['w'] || gameState.keyboard['arrowup']) vy = -1;
+      if (gameState.keyboard['s'] || gameState.keyboard['arrowdown']) vy = 1;
+      if (gameState.keyboard['a'] || gameState.keyboard['arrowleft']) vx = -1;
+      if (gameState.keyboard['d'] || gameState.keyboard['arrowright']) vx = 1;
+      
+      // Normalize vectors
+      if (vx !== 0 && vy !== 0) {
+        vx *= 0.707;
+        vy *= 0.707;
+      }
+      
+      gameState.player.x += vx * moveSpeed;
+      gameState.player.y += vy * moveSpeed;
+      
+      // Limit inside screen bounds
+      gameState.player.x = Math.max(16, Math.min(1264, gameState.player.x));
+      gameState.player.y = Math.max(16, Math.min(704, gameState.player.y));
+      
+      // Animate walking
+      if (vx !== 0 || vy !== 0) {
+        gameState.player.frameTimer++;
+        if (gameState.player.frameTimer > 10) {
+          gameState.player.frame = 1 - gameState.player.frame;
+          gameState.player.frameTimer = 0;
+        }
+      } else {
+        gameState.player.frame = 0;
+      }
+      
+      // Shoot controls
+      if (gameState.mouse.clicked && (gameState.phase === 'COMBAT' || gameState.phase === 'BOSS_COMBAT')) {
+        fireWeapon();
+      }
+      
+      // =======================================================================
+      // C. COMPANION AI
+      // =======================================================================
+      const companionSpeed = 0.08; // easing follow
+      // Easing follow toward player offset
+      const targetCompX = gameState.player.x - 45;
+      const targetCompY = gameState.player.y + 15;
+      gameState.companion.x += (targetCompX - gameState.companion.x) * companionSpeed;
+      gameState.companion.y += (targetCompY - gameState.companion.y) * companionSpeed;
+      
+      // Auto target enemies
+      if (gameState.enemies.length > 0 && Math.random() < 0.05) {
+        // Find nearest
+        let target = null;
+        let minDist = COMPANIONS[gameState.companionType].range;
+        gameState.enemies.forEach(e => {
+          const d = Math.hypot(e.x - gameState.companion.x, e.y - gameState.companion.y);
+          if (d < minDist) {
+            minDist = d;
+            target = e;
+          }
+        });
+        
+        if (target) {
+          // Fire auto bullet at target
+          audio.playSFX('shoot');
+          gameState.projectiles.push({
+            x: gameState.companion.x,
+            y: gameState.companion.y,
+            vx: ((target.x - gameState.companion.x) / minDist) * 6,
+            vy: ((target.y - gameState.companion.y) / minDist) * 6,
+            damage: 8 + gameState.companionLevel * 2,
+            radius: 4,
+            color: '#d8b8ff',
+            type: 'comp_bullet',
+            piercing: 1
+          });
+        }
+      }
+      
+      // =======================================================================
+      // D. ENEMIES LOGIC
+      // =======================================================================
+      gameState.enemies.forEach(e => {
+        // Flash decay
+        if (e.hitFlash > 0) e.hitFlash--;
+        
+        // Stun decay
+        if (e.stunned > 0) {
+          e.stunned--;
+          return;
+        }
+        
+        // Movement: target plant blockers first, else player
+        let targetX = gameState.player.x;
+        let targetY = gameState.player.y;
+        
+        // Find nearest mature plant wall (carrot or pumpkin)
+        let nearestBlocker = null;
+        let minDist = 99999;
+        gameState.plants.forEach(p => {
+          if (p.crop && (p.crop === 'carrot' || p.crop === 'pumpkin')) {
+            const d = Math.hypot((p.x + 50) - e.x, (p.y + 35) - e.y);
+            if (d < minDist) {
+              minDist = d;
+              nearestBlocker = p;
+            }
+          }
+        });
+        
+        if (nearestBlocker && minDist < 250) {
+          targetX = nearestBlocker.x + 50;
+          targetY = nearestBlocker.y + 35;
+        }
+        
+        const dx = targetX - e.x;
+        const dy = targetY - e.y;
+        const dist = Math.hypot(dx, dy);
+        
+        let sp = e.speed;
+        // Check snow slow
+        if (gameState.companionAbilityActive && gameState.companionType === 'snowfox') {
+          sp *= 0.3; // Frozen Time
+        }
+        
+        if (dist > 0) {
+          e.vx = (dx / dist) * sp;
+          e.vy = (dy / dist) * sp;
+        }
+        
+        e.x += e.vx;
+        e.y += e.vy;
+        
+        // Attack adjacent structures / player
+        if (dist < 28) {
+          if (nearestBlocker && minDist < 45) {
+            // Hurt plant
+            nearestBlocker.hp -= 0.5;
+            spawnBloodParticles(nearestBlocker.x + 50, nearestBlocker.y + 35, '#8d6e63', 2);
+            if (nearestBlocker.hp <= 0) {
+              nearestBlocker.crop = null;
+              checkSynergyPatterns();
+            }
+          } else {
+            // Hurt Player
+            playerTakeDamage();
+          }
+        }
+        
+        // Specific enemy behaviors
+        if (e.type === 'wasp' && Math.random() < 0.01) {
+          // Quick divebomb
+          e.x += e.vx * 15;
+          e.y += e.vy * 15;
+        }
+      });
+      
+      // =======================================================================
+      // E. PROJECTILES PHYSICS
+      // =======================================================================
+      for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+        const p = gameState.projectiles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        // Decay duration for whips
+        if (p.type === 'whip') {
+          p.duration--;
+          if (p.duration <= 0) {
+            gameState.projectiles.splice(i, 1);
+            continue;
+          }
+        }
+        
+        // Out of bounds checks
+        if (p.x < 0 || p.x > 1280 || p.y < 0 || p.y > 720) {
+          if (p.bounces && p.bounces > 0) {
+            p.bounces--;
+            if (p.x < 0 || p.x > 1280) p.vx *= -1;
+            if (p.y < 0 || p.y > 720) p.vy *= -1;
+          } else {
+            gameState.projectiles.splice(i, 1);
+            continue;
+          }
+        }
+        
+        // Collide with enemies
+        for (let j = gameState.enemies.length - 1; j >= 0; j--) {
+          const e = gameState.enemies[j];
+          const dist = Math.hypot(e.x - p.x, e.y - p.y);
+          if (dist < (p.radius + e.width / 2)) {
+            // Damage enemy
+            const isCrit = Math.random() < 0.15;
+            const dmg = isCrit ? p.damage * 2.0 : p.damage;
+            
+            damageEnemy(e, dmg, isCrit);
+            
+            // Pollen explosion triggers AoE
+            if (p.type === 'pollen') {
+              audio.playSFX('pollen');
+              spawnExplosionParticles(p.x, p.y, '#ffd700', 25);
+              // Area damage checks
+              gameState.enemies.forEach(oth => {
+                const od = Math.hypot(oth.x - p.x, oth.y - p.y);
+                if (od < 80 && oth !== e) {
+                  damageEnemy(oth, p.damage * 0.7, false);
+                }
+              });
+            }
+            
+            p.piercing--;
+            if (p.piercing <= 0) {
+              gameState.projectiles.splice(i, 1);
+              break;
+            }
+          }
+        }
+      }
+      
+      // =======================================================================
+      // F. DROPS & ITEMS PHYSICS
+      // =======================================================================
+      for (let i = gameState.drops.length - 1; i >= 0; i--) {
+        const d = gameState.drops[i];
+        d.vy += d.gravity;
+        d.x += d.vx;
+        d.y += d.vy;
+        
+        // Friction ground bounce
+        if (d.y > 660) {
+          d.y = 660;
+          d.vy *= -0.4;
+          d.vx *= 0.6;
+        }
+        
+        // Magnet follow to player
+        const dist = Math.hypot(gameState.player.x - d.x, gameState.player.y - d.y);
+        if (dist < 150) {
+          d.x += ((gameState.player.x - d.x) / dist) * 6;
+          d.y += ((gameState.player.y - d.y) / dist) * 6;
+        }
+        
+        if (dist < 25) {
+          // Collect item
+          if (d.type === 'seed') {
+            gameState.seeds += 2;
+            audio.playSFX('harvest');
+            spawnPlantParticles(d.x, d.y, '#a8ffab', 4);
+          } else {
+            gameState.water += 0.5;
+            audio.playSFX('harvest');
+            spawnPlantParticles(d.x, d.y, '#a8d8ff', 4);
+          }
+          gameState.drops.splice(i, 1);
+          updateHUDResources();
+          continue;
+        }
+        
+        d.life--;
+        if (d.life <= 0) {
+          gameState.drops.splice(i, 1);
+        }
+      }
+      
+      // =======================================================================
+      // G. PARTICLES TICKER
+      // =======================================================================
+      for (let i = gameState.particles.length - 1; i >= 0; i--) {
+        const part = gameState.particles[i];
+        part.x += part.vx;
+        part.y += part.vy;
+        part.life--;
+        if (part.life <= 0) {
+          gameState.particles.splice(i, 1);
+        }
+      }
+    }
+
+    /* =========================================================================
+       CANVAS RENDERING ENGINE
+       ========================================================================= */
+    function render() {
+      ctx.save();
+      
+      // Screen Shake
+      if (gameState.shakeTimer > 0) {
+        const dx = (Math.random() - 0.5) * gameState.shakeAmount;
+        const dy = (Math.random() - 0.5) * gameState.shakeAmount;
+        ctx.translate(dx, dy);
+      }
+      
+      // 1. Draw Season Backgrounds
+      drawBackgroundGrid();
+      
+      // 2. Draw Planting Soil grid
+      drawPlantingSoilGrid();
+      
+      // 3. Draw Drops
+      gameState.drops.forEach(d => {
+        ctx.fillStyle = d.type === 'seed' ? '#ffd700' : '#00ffff';
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, 6, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      });
+
+      // 4. Draw Companions
+      const compSprite = spriteCache['comp_' + gameState.companionType] || spriteCache.comp_hedgehog;
+      ctx.drawImage(compSprite, gameState.companion.x - 12, gameState.companion.y - 12);
+      
+      // Draw Hedgehog Bubble Shield
+      if (gameState.companionAbilityActive && gameState.companionType === 'hedgehog') {
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(gameState.player.x, gameState.player.y, 35, 0, Math.PI*2);
+        ctx.stroke();
+      }
+
+      // 5. Draw Player
+      const p = gameState.player;
+      const playerSprite = p.frame === 0 ? spriteCache.player_walk_0 : spriteCache.player_walk_1;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      // Flip based on looking angle
+      const lookRight = Math.abs(p.angle) < Math.PI / 2;
+      if (!lookRight) {
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(playerSprite, -16, -16);
+      ctx.restore();
+      
+      // Draw Gun pointing
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = '#999';
+      ctx.fillRect(8, -2, 12, 4); // Gun barrel
+      ctx.fillStyle = '#666';
+      ctx.fillRect(5, -3, 6, 6); // Stock
+      ctx.restore();
+      
+      // 6. Draw Projectiles
+      gameState.projectiles.forEach(proj => {
+        ctx.fillStyle = proj.color;
+        if (proj.type === 'whip') {
+          // Swing arcs
+          ctx.strokeStyle = proj.color;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(gameState.player.x, gameState.player.y, proj.radius, gameState.player.angle - 0.6, gameState.player.angle + 0.6);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI*2);
+          ctx.fill();
+        }
+      });
+      
+      // 7. Draw Enemies
+      gameState.enemies.forEach(e => {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        
+        // Look flip
+        if (e.vx > 0) ctx.scale(-1, 1);
+        
+        if (e.hitFlash > 0) {
+          // Draw bright white overlay
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(0, 0, e.width/2 + 2, 0, Math.PI*2);
+          ctx.fill();
+        } else {
+          const sprite = spriteCache[e.cacheName] || spriteCache.enemy_ant;
+          ctx.drawImage(sprite, -e.width/2, -e.height/2, e.width, e.height);
+        }
+        
+        ctx.restore();
+        
+        // Draw Health Indicator bar above
+        if (e.hp < e.maxHp) {
+          ctx.fillStyle = '#555';
+          ctx.fillRect(e.x - 12, e.y - e.height/2 - 8, 24, 4);
+          ctx.fillStyle = 'var(--lime)';
+          ctx.fillRect(e.x - 12, e.y - e.height/2 - 8, (e.hp / e.maxHp) * 24, 4);
+        }
+        
+        // Draw marked indicator
+        if (e.marked) {
+          ctx.fillStyle = 'var(--hot-pink)';
+          ctx.fillRect(e.x - 4, e.y - e.height/2 - 14, 8, 4);
+        }
+      });
+      
+      // 8. Draw Particles & Text
+      gameState.particles.forEach(part => {
+        if (part.text) {
+          ctx.fillStyle = part.color;
+          ctx.font = part.font;
+          ctx.fillText(part.text, part.x, part.y);
+        } else {
+          ctx.fillStyle = part.color;
+          ctx.fillRect(part.x, part.y, part.size, part.size);
+        }
+      });
+      
+      // 9. Crosshair for aiming
+      if (gameState.phase === 'COMBAT' || gameState.phase === 'BOSS_COMBAT') {
+        ctx.strokeStyle = 'var(--hot-pink)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(gameState.mouse.x, gameState.mouse.y, 8, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(gameState.mouse.x - 12, gameState.mouse.y);
+        ctx.lineTo(gameState.mouse.x + 12, gameState.mouse.y);
+        ctx.moveTo(gameState.mouse.x, gameState.mouse.y - 12);
+        ctx.lineTo(gameState.mouse.x, gameState.mouse.y + 12);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+
+    function drawBackgroundGrid() {
+      // Background base grids
+      if (gameState.season === 1) { // Spring
+        ctx.fillStyle = '#d5f5e3'; // mint green grass
+        ctx.fillRect(0,0,1280,720);
+        // Draw some little flowers
+        ctx.fillStyle = '#ffb6d9';
+        ctx.fillRect(100, 100, 4, 4);
+        ctx.fillRect(900, 200, 4, 4);
+        ctx.fillRect(500, 600, 4, 4);
+      } else if (gameState.season === 2) { // Summer
+        ctx.fillStyle = '#fdebd0'; // golden sand/grass
+        ctx.fillRect(0,0,1280,720);
+        // Sunbeams particles
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+        ctx.fillRect(300, 0, 200, 720);
+      } else if (gameState.season === 3) { // Fall
+        ctx.fillStyle = '#f5cba7'; // orange dirt
+        ctx.fillRect(0,0,1280,720);
+        // Falling leaves particles
+        if (Math.random() < 0.05) {
+          gameState.particles.push({
+            x: Math.random() * 1280, y: 0,
+            vx: -0.5 - Math.random() * 1.0,
+            vy: 1.0 + Math.random() * 1.5,
+            color: '#e65100',
+            size: 6,
+            life: 300
+          });
+        }
+      } else { // Winter
+        ctx.fillStyle = '#ebf5fb'; // snow white blue
+        ctx.fillRect(0,0,1280,720);
+        // Snow falling
+        if (Math.random() < 0.25) {
+          gameState.particles.push({
+            x: Math.random() * 1280, y: 0,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: 1.5 + Math.random() * 1.5,
+            color: '#fff',
+            size: 4,
+            life: 300
+          });
+        }
+      }
+    }
+
+    function drawPlantingSoilGrid() {
+      // Draw grid bounding box and outlines
+      gameState.plants.forEach((p, idx) => {
+        // Draw soil base
+        ctx.fillStyle = '#784212'; // dark tilled soil
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        
+        // Grid outline
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        if (gameState.phase === 'PLANTING') {
+          // Highlight hover tile
+          const hoverIdx = getGridTileIndexAt(gameState.mouse.x, gameState.mouse.y);
+          if (hoverIdx === idx) {
+            ctx.strokeStyle = 'var(--cyan)';
+          }
+        }
+        ctx.lineWidth = 1;
+        ctx.strokeRect(p.x, p.y, p.width, p.height);
+        
+        // Draw Crop
+        if (p.crop) {
+          const spriteName = p.mature ? 'crop_' + p.crop : 'sprout';
+          const sprite = spriteCache[spriteName];
+          if (sprite) {
+            // Center crop inside grid cell
+            ctx.drawImage(sprite, p.x + p.width/2 - sprite.width/2, p.y + p.height/2 - sprite.height/2 - 10);
+          }
+          
+          // Growth loading bar if growing
+          if (!p.mature) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(p.x + 10, p.y + p.height - 12, p.width - 20, 6);
+            ctx.fillStyle = 'var(--lime)';
+            ctx.fillRect(p.x + 10, p.y + p.height - 12, (p.growth / p.growTime) * (p.width - 20), 6);
+          } else {
+            // Mature sparkles
+            if (Math.random() < 0.02) {
+              spawnPlantParticles(p.x + p.width/2, p.y + p.height/2, '#ffd700', 3);
+            }
+          }
+          
+          // Draw Health indicator if crop is hurt
+          if (p.hp < p.maxHP) {
+            ctx.fillStyle = '#e53935';
+            ctx.fillRect(p.x + 10, p.y + 3, (p.hp / p.maxHP) * (p.width - 20), 4);
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       GAME TICK LOOP STARTER
+       ========================================================================= */
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Initialize asset cache and boot menu screen
+    initSpriteCache();
+    initPlantingBarCanvases();
+    loadGameProgress();
+    showScreen('screen-menu');
+    gameLoop();
+  </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# Git ignore file for game repo
+tactical_ops_fixed.zip
+*.zip
+.DS_Store
+Thumbs.db
